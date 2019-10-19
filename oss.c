@@ -44,8 +44,11 @@ sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid);
 void* createSharedMemory(key_t* key, size_t* size, int* shmid);
 void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl);
 void spawnProcess();
+void scheduleProcess();
+void dispatchProcess();
+void log();
 
-//-------------------------------------------------------
+//---------------------MAIN-------------------------------
 
 int main(int arg, char* argv[]) {
 
@@ -68,10 +71,10 @@ int main(int arg, char* argv[]) {
     size_t shmMsgSize = sizeof(MSG);
     size_t shmPCBArraySize = 18 * sizeof(PCB);
 
-    sem_t* shmSemPtr = NULL;                        //pointers
-    Clock* shmClockPtr = NULL;
-    MSG* shmMsgPtr = NULL;
-    PCB* shmPCBArrayPtr = NULL;
+    sem_t* shmSemPtr = createShmSemaphore(&shmSemKey, &shmSemSize, &shmSemID);                        //pointers
+    Clock* shmClockPtr = (Clock*)createSharedMemory(&shmClockKey, &shmClockSize, &shmClockID);
+    MSG* shmMsgPtr = (MSG*)createSharedMemory(&shmMsgKey, &shmMsgSize, &shmMsgID);
+    PCB* shmPCBArrayPtr = (PCB*)createSharedMemory(&shmPCBArrayKey, &shmPCBArraySize, &shmPCBArrayID);
 
     //Queues
     unsigned int* queue1;
@@ -81,11 +84,16 @@ int main(int arg, char* argv[]) {
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     //-=-=-=--=-==-=termination-=-=-=-=-=----=-=-=-=
+    cleanupSharedMemory(&shmSemID, &shmSemCtl);
+    cleanupSharedMemory(&shmClockID, &shmClockCtl);
+    cleanupSharedMemory(&shmMsgID, &shmMsgCtl);
+    cleanupSharedMemory(&shmPCBArrayID, &shmPCBArrayCtl);
     
     return 0;
 }
 
 //===================FUNCTION=DEFINITIONS============================
+
 sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid) {
     //Allocate shared memory and get an id
     *shmid = shmget(*key, *size, SHM_CREATE_FLAGS);
