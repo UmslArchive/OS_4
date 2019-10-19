@@ -79,7 +79,7 @@ int main(int arg, char* argv[]) {
 }
 
 //===================FUNCTION=DEFINITIONS============================
-sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid){
+sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid) {
     //Allocate shared memory and get an id
     *shmid = shmget(*key, *size, SHM_CREATE_FLAGS);
     if(*shmid < 0) {
@@ -103,7 +103,7 @@ sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid){
     return temp;
 }
 
-void* createSharedMemory(key_t* key, size_t* size, int* shmid){
+void* createSharedMemory(key_t* key, size_t* size, int* shmid) {
     //Allocate shared memory and get an id
     *shmid = shmget(*key, *size, SHM_CREATE_FLAGS);
     if(*shmid < 0) {
@@ -140,7 +140,7 @@ void* createSharedMemory(key_t* key, size_t* size, int* shmid){
     return temp;
 }
 
-void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl){
+void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl) {
     int cmd = IPC_RMID;
     int rtrn = shmctl(*shmid, cmd, ctl);
     if(rtrn == -1) {
