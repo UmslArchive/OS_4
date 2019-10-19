@@ -14,7 +14,14 @@ void tickClock(Clock* mainClock, unsigned int sec, unsigned int nanosec) {
     }
 
     //Set the clock
-    mainClock->nanoseconds += nanosec;
+    if(mainClock->nanoseconds + nanosec < 1000000000) {
+        mainClock->nanoseconds += nanosec;
+    }
+    else {
+        ++sec;
+        mainClock->nanoseconds = nanosec - (1000000000 - mainClock->nanoseconds);
+    }
+    
     mainClock->seconds += sec;
 }
 
