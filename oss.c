@@ -235,7 +235,7 @@ PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
     }
 
     PCB* temp = pcbArr;
-    for(i = 0; i < sPID; ++i) {
+    for(i = 0; i < sPID - 1; ++i) {
         ++temp;
     }
     
