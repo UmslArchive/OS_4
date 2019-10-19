@@ -4,6 +4,8 @@
 //Date:     10/22/19
 //-----------------------------------------------------
 
+#include "sharedMem.h"
+
 int main(int arg, char* argv[]) {
 
     return 0;
