@@ -47,6 +47,7 @@ void spawnProcess();
 void scheduleProcess();
 void dispatchProcess();
 void writeLog();
+void printSharedMemory(int shmid, void* shmObj);
 
 //---------------------MAIN-------------------------------
 
@@ -80,6 +81,15 @@ int main(int arg, char* argv[]) {
     unsigned int* queue1;
     unsigned int* queue2;
     unsigned int* queue3;
+
+    //Initalize shared memory
+    initClock(shmClockPtr);
+    for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+        PCB* it = shmPCBArrayPtr;
+        initPCB(it, i + 1, 0);
+        ++it;
+    }
+    resetMSG(shmMsgPtr);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -161,5 +171,36 @@ void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl) {
     if(rtrn == -1) {
         perror("ERROR:oss:shmctl failed");
         exit(1);
+    }
+}
+
+void printSharedMemory(int shmid, void* shmPtr) {
+    int i;
+    Clock* tempClock = NULL;
+    MSG* tempMSG = NULL;
+    PCB* tempPCB = NULL;
+
+    if(shmid == shmClockID) {
+        tempClock = (Clock*)shmPtr;
+        fprintf(stderr, "Clock: %ud:%ud\n\n", tempClock->seconds, tempClock->nanoseconds);
+    }
+    
+    if(shmid == shmMsgID) {
+        tempMSG = (MSG*)shmPtr;
+        fprintf(stderr, "MSG: simPID=%ud quantum=%ud\n\n", tempMSG->simPID, tempMSG->quantum);
+    }
+
+    if(shmid == shmPCBArrayID) {
+        tempPCB = (PCB*)shmPtr;
+        for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+            fprintf(stderr, "PCB#%d:\n  simPID=%ud\n  prio=%ud\n  alive=%ud:%ud\n  cpuUseTime=%ud:%ud\n  pBurst=%ud:%ud\n\n",
+                i, 
+                tempPCB->simPID, 
+                tempPCB->priority, 
+                tempPCB->totalTimeAlive.seconds, tempPCB->totalTimeAlive.nanoseconds,
+                tempPCB->cpuTimeUsed.seconds, tempPCB->cpuTimeUsed.nanoseconds, 
+                tempPCB->prevBurst.seconds, tempPCB->prevBurst.nanoseconds
+            );
+        }
     }
 }
