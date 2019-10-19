@@ -43,10 +43,13 @@ struct shmid_ds shmPCBArrayCtl;
 sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid);
 void* createSharedMemory(key_t* key, size_t* size, int* shmid);
 void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl);
+void spawnProcess();
 
 //-------------------------------------------------------
 
 int main(int arg, char* argv[]) {
+
+    //-=-=-=-=-=Initialization-=-=-=--=--=-=-=--=-
 
     //Utility variables
     int i, j, k;
@@ -74,6 +77,10 @@ int main(int arg, char* argv[]) {
     unsigned int* queue1;
     unsigned int* queue2;
     unsigned int* queue3;
+
+    //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+    //-=-=-=--=-==-=termination-=-=-=-=-=----=-=-=-=
     
     return 0;
 }
