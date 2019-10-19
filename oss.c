@@ -205,7 +205,7 @@ void printSharedMemory(int shmid, void* shmPtr) {
         tempPCB = (PCB*)shmPtr;
         for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
             fprintf(stderr, "PCB#%d:\n  simPID=%u\n  prio=%u\n  alive=%u:%u\n  cpuUseTime=%u:%u\n  pBurst=%u:%u\n\n",
-                i, 
+                i + 1, 
                 tempPCB->simPID, 
                 tempPCB->priority, 
                 tempPCB->totalTimeAlive.seconds, tempPCB->totalTimeAlive.nanoseconds,
