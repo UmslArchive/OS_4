@@ -22,6 +22,7 @@
 //Constants
 const int MAX_QUEUABLE_PROCESSES = 18;
 const int MAX_LOG_LINES = 10000;
+const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
 
 //Shared memory IDs
 int shmSemID = 0;
@@ -76,4 +77,37 @@ int main(int arg, char* argv[]) {
 
     
     return 0;
+}
+
+//===================FUNCTION=DEFINITIONS============================
+sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid){
+    //Allocate shared memory and get an id
+    *shmid = shmget(*key, *size, SHM_CREATE_FLAGS);
+    if(*shmid < 0) {
+        perror("ERROR:oss:shmget failed(semaphore)");
+        exit(1);
+    }
+
+    //Assign pointer
+    sem_t* temp = (sem_t*)shmat(*shmid, NULL, 0);
+    if(temp == (sem_t*) -1) {
+        perror("ERROR:oss:shmat failed(semaphore)");
+        exit(1);
+    }
+
+    //Init semaphore
+    if(sem_init(temp, 1, 1) == -1) {
+        PERROR("ERROR:oss:sem_init failed");
+        exit(1);
+    }
+
+    return temp;
+}
+
+void* createSharedMemory(key_t* key, size_t* size, int* shmid){
+
+}
+
+void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl){
+
 }
