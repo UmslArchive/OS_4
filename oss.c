@@ -92,10 +92,11 @@ int main(int arg, char* argv[]) {
     it = NULL;
     resetMSG(shmMsgPtr);
 
-    tickClock(shmClockPtr, 1, 100000000);
-
-
-    printSharedMemory(shmClockID, shmClockPtr);
+    for(i = 0; i < 50; ++i) {
+            tickClock(shmClockPtr, 1, 100000000);
+        printSharedMemory(shmClockID, shmClockPtr);
+    }
+    
     //printSharedMemory(shmMsgID, shmMsgPtr);
     //printSharedMemory(shmPCBArrayID, shmPCBArrayPtr);
 
