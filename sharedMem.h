@@ -25,7 +25,16 @@ typedef struct {
     Clock prevBurst;
 } PCB;
 
+typedef struct {
+    unsigned int simPID;
+    unsigned int quantum;
+} MSG;
+
 //Struct utility function prototypes
+void initClock(Clock* clock);
+void initPCB(PCB* pcb, unsigned int sPID, unsigned int prio);
 void tickClock(Clock* mainClock, unsigned int sec, unsigned int nanosec);
+void resetMSG(MSG* msg);
+void setMSG(MSG* msg, unsigned int sPID, unsigned int quant);
 
 #endif

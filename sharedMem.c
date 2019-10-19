@@ -17,3 +17,29 @@ void tickClock(Clock* mainClock, unsigned int sec, unsigned int nanosec) {
     mainClock->nanoseconds += nanosec;
     mainClock->seconds += sec;
 }
+
+void initClock(Clock* clock){
+    clock->nanoseconds = 0;
+    clock->seconds = 0;
+}
+
+void initPCB(PCB* pcb, unsigned int sPID, unsigned int prio){
+    pcb->simPID = sPID;
+    pcb->priority = prio;
+    pcb->cpuTimeUsed.nanoseconds = 0;
+    pcb->cpuTimeUsed.seconds = 0;
+    pcb->prevBurst.nanoseconds = 0;
+    pcb->prevBurst.seconds = 0;
+    pcb->totalTimeAlive.nanoseconds = 0;
+    pcb->totalTimeAlive.seconds = 0;
+}
+
+void resetMSG(MSG* msg) {
+    msg->simPID = 0;
+    msg->quantum = 0;
+}
+
+void setMSG(MSG* msg, unsigned int sPID, unsigned int quant){
+    msg->simPID = sPID;
+    msg->quantum = quant;
+}
