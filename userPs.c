@@ -39,6 +39,8 @@ struct shmid_ds shmPCBArrayCtl;
 //=================FUNCTION=PROTOTYPES===================
 sem_t* attachShmSemaphore(key_t* key, size_t* size, int* shmid);
 void* attachSharedMemory(key_t* key, size_t* size, int* shmid);
+int checkForMSG();
+
 void run();
 
 //-------------------------------------------------------
@@ -68,8 +70,14 @@ int main(int arg, char* argv[]) {
 
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
 
+    while(1) {
+        sem_wait(shmSemPtr);
+            while(checkForMSG == 0);
+        sem_close(shmSemPtr);
+        run();
+    }
 
-    //-=-=-==-=-=-=-Finalization/termination--==--==-=--==-
+    //-=-=-==-=-=-=-Finalization/Termination--==--==-=--==-
 
     return 100;
 }

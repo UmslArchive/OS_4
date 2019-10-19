@@ -21,7 +21,6 @@
 //========================GLOBALS========================
 
 //Constants
-const int MAX_QUEUABLE_PROCESSES = 18;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
 
@@ -103,7 +102,21 @@ int main(int arg, char* argv[]) {
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    //-=-=-=--=-==-=termination-=-=-=-=-==-=-=--=-=-=-=
+    for(k = 0; k < 100; ++k) {
+        spawnProcess();
+        scheduleProcess();
+
+        //Critical section
+        sem_wait(shmSemPtr);
+        
+            dispatchProcess();
+
+        sem_close(shmSemPtr);
+        
+    }
+
+    //-=-=-=--=-==-=Termination-=-=-=-=-==-=-=--=-=-=-=
+
     cleanupSharedMemory(&shmSemID, &shmSemCtl);
     cleanupSharedMemory(&shmClockID, &shmClockCtl);
     cleanupSharedMemory(&shmMsgID, &shmMsgCtl);

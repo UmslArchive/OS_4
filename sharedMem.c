@@ -31,7 +31,7 @@ void initClock(Clock* clock){
 }
 
 void initPCB(PCB* pcb, unsigned int sPID, unsigned int prio){
-    pcb->simPID = sPID;
+    pcb->simPID = sPID;     //corresponds to bit vector index (converted to count from 1)
     pcb->priority = prio;
     pcb->cpuTimeUsed.nanoseconds = 0;
     pcb->cpuTimeUsed.seconds = 0;
