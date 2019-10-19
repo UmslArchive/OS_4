@@ -39,6 +39,7 @@ struct shmid_ds shmPCBArrayCtl;
 //=================FUNCTION=PROTOTYPES===================
 sem_t* attachShmSemaphore(key_t* key, size_t* size, int* shmid);
 void* attachSharedMemory(key_t* key, size_t* size, int* shmid);
+void run();
 
 //-------------------------------------------------------
 int main(int arg, char* argv[]) {
@@ -66,7 +67,7 @@ int main(int arg, char* argv[]) {
     PCB* shmPCBArrayPtr = NULL;
 
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
-    
+
 
     //-=-=-==-=-=-=-Finalization/termination--==--==-=--==-
 
