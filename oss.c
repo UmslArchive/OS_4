@@ -106,7 +106,40 @@ sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid){
 }
 
 void* createSharedMemory(key_t* key, size_t* size, int* shmid){
+    //Allocate shared memory and get an id
+    *shmid = shmget(*key, *size, SHM_CREATE_FLAGS);
+    if(*shmid < 0) {
+        perror("ERROR:oss:shmget failed");
+        exit(1);
+    }
 
+    //Assign pointer
+    void* temp = shmat(*shmid, NULL, 0);
+
+    switch(*key) {
+        case SHM_KEY_CLOCK:
+        if(temp == (Clock*)-1) {
+            perror("ERROR:oss:shmat failed(clock)");
+            exit(1);
+        }
+        break;
+
+        case SHM_KEY_MSG:
+        if(temp == (MSG*)-1) {
+            perror("ERROR:oss:shmat failed(msg)");
+            exit(1);
+        }
+        break;
+
+        case SHM_KEY_PCB_ARRAY:
+        if(temp == (PCB*)-1) {
+            perror("ERROR:oss:shmat failed(pcbArray)");
+            exit(1);
+        }
+        break;
+    }
+
+    return temp;
 }
 
 void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl){
