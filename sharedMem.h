@@ -8,8 +8,12 @@
 #define SHARED_MEM_H
 
 //Keys
+#define SHM_KEY_SEM         0x66666666
 #define SHM_KEY_PCB_ARRAY   0x77777777
 #define SHM_KEY_MSG         0x88888888
+#define SHM_KEY_CLOCK       0x99999999
+
+//----------------------------------------
 
 //Structs
 typedef struct {
