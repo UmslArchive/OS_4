@@ -91,6 +91,10 @@ int main(int arg, char* argv[]) {
     }
     resetMSG(shmMsgPtr);
 
+    printSharedMemory(shmClockID, shmClockPtr);
+    printSharedMemory(shmMsgID, shmMsgPtr);
+    printSharedMemory(shmPCBArrayID, shmPCBArrayPtr);
+
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     //-=-=-=--=-==-=termination-=-=-=-=-=----=-=-=-=
@@ -180,16 +184,23 @@ void printSharedMemory(int shmid, void* shmPtr) {
     MSG* tempMSG = NULL;
     PCB* tempPCB = NULL;
 
+    //Don't print semaphore
+    if(shmid == shmSemID)
+        return;
+
+    //Print Clock
     if(shmid == shmClockID) {
         tempClock = (Clock*)shmPtr;
         fprintf(stderr, "Clock: %ud:%ud\n\n", tempClock->seconds, tempClock->nanoseconds);
     }
     
+    //Print MSG
     if(shmid == shmMsgID) {
         tempMSG = (MSG*)shmPtr;
         fprintf(stderr, "MSG: simPID=%ud quantum=%ud\n\n", tempMSG->simPID, tempMSG->quantum);
     }
 
+    //Print PCB array
     if(shmid == shmPCBArrayID) {
         tempPCB = (PCB*)shmPtr;
         for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
