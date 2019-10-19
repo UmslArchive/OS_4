@@ -191,20 +191,20 @@ void printSharedMemory(int shmid, void* shmPtr) {
     //Print Clock
     if(shmid == shmClockID) {
         tempClock = (Clock*)shmPtr;
-        fprintf(stderr, "Clock: %ud:%ud\n\n", tempClock->seconds, tempClock->nanoseconds);
+        fprintf(stderr, "Clock: %ud:%u\n\n", tempClock->seconds, tempClock->nanoseconds);
     }
     
     //Print MSG
     if(shmid == shmMsgID) {
         tempMSG = (MSG*)shmPtr;
-        fprintf(stderr, "MSG: simPID=%ud quantum=%ud\n\n", tempMSG->simPID, tempMSG->quantum);
+        fprintf(stderr, "MSG: simPID=%u quantum=%u\n\n", tempMSG->simPID, tempMSG->quantum);
     }
 
     //Print PCB array
     if(shmid == shmPCBArrayID) {
         tempPCB = (PCB*)shmPtr;
         for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
-            fprintf(stderr, "PCB#%d:\n  simPID=%ud\n  prio=%ud\n  alive=%ud:%ud\n  cpuUseTime=%ud:%ud\n  pBurst=%ud:%ud\n\n",
+            fprintf(stderr, "PCB#%d:\n  simPID=%u\n  prio=%u\n  alive=%ud:%u\n  cpuUseTime=%ud:%u\n  pBurst=%ud:%u\n\n",
                 i, 
                 tempPCB->simPID, 
                 tempPCB->priority, 
