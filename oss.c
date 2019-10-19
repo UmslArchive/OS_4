@@ -85,19 +85,25 @@ int main(int arg, char* argv[]) {
 
     //Initalize shared memory
     initClock(shmClockPtr);
-    PCB* it = shmPCBArrayPtr;
+    PCB* pcbIterator = shmPCBArrayPtr;
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
-        initPCB(it, i + 1, 0);
-        ++it;
+        initPCB(pcbIterator, i + 1, 0);
+        ++pcbIterator;
     }
-    it = NULL;
+    pcbIterator = NULL;
     resetMSG(shmMsgPtr);
+
+    pcbIterator = selectPCB(shmPCBArrayPtr, 3);
+
+    pcbIterator->priority = 100;
+
+    
     
     printSharedMemory(shmPCBArrayID, shmPCBArrayPtr);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    //-=-=-=--=-==-=termination-=-=-=-=-=----=-=-=-=
+    //-=-=-=--=-==-=termination-=-=-=-=-==-=-=--=-=-=-=
     cleanupSharedMemory(&shmSemID, &shmSemCtl);
     cleanupSharedMemory(&shmClockID, &shmClockCtl);
     cleanupSharedMemory(&shmMsgID, &shmMsgCtl);
@@ -218,8 +224,8 @@ void printSharedMemory(int shmid, void* shmPtr) {
     }
 }
 
-//The index of the bit vector has a 1 to 1 correspondence to the simulated pid value of a process,
-//so this function allows one to select specific PCBs from the array by returning a ptr.
+//The index of the bit vector has a 1 to 1 correspondence to the simulated pid value of a process.
+//This function allows one to select specific PCBs from the array by returning a ptr.
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
     int i;
 
