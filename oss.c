@@ -92,6 +92,8 @@ int main(int arg, char* argv[]) {
     it = NULL;
     resetMSG(shmMsgPtr);
 
+    setMSG(shmMsgPtr, 100, 101);
+
     printSharedMemory(shmClockID, shmClockPtr);
     printSharedMemory(shmMsgID, shmMsgPtr);
     printSharedMemory(shmPCBArrayID, shmPCBArrayPtr);
