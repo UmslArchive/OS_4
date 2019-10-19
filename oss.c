@@ -212,6 +212,8 @@ void printSharedMemory(int shmid, void* shmPtr) {
                 tempPCB->cpuTimeUsed.seconds, tempPCB->cpuTimeUsed.nanoseconds, 
                 tempPCB->prevBurst.seconds, tempPCB->prevBurst.nanoseconds
             );
+
+            ++tempPCB;
         }
     }
 }
