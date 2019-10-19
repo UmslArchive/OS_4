@@ -70,12 +70,10 @@ int main(int arg, char* argv[]) {
     MSG* shmMsgPtr = NULL;
     PCB* shmPCBArrayPtr = NULL;
 
-
     //Queues
     unsigned int* queue1;
     unsigned int* queue2;
     unsigned int* queue3;
-
     
     return 0;
 }
@@ -143,5 +141,10 @@ void* createSharedMemory(key_t* key, size_t* size, int* shmid){
 }
 
 void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl){
-
+    int cmd = IPC_RMID;
+    int rtrn = shmctl(*shmid, cmd, ctl);
+    if(rtrn == -1) {
+        perror("ERROR:oss:shmctl failed");
+        exit(1);
+    }
 }
