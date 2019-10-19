@@ -19,6 +19,10 @@
 
 //========================GLOBALS========================
 
+//Constants
+const int MAX_QUEUABLE_PROCESSES = 18;
+const int MAX_LOG_LINES = 10000;
+
 //Shared memory IDs
 int shmSemID = 0;
 int shmMsgID = 0;
@@ -59,13 +63,10 @@ int main(int arg, char* argv[]) {
     size_t shmMsgSize = sizeof(MSG);
     size_t shmPCBArraySize = 18 * sizeof(PCB);
 
-    sem_t* shmSemPtr = NULL;
+    sem_t* shmSemPtr = NULL;                        //pointers
     Clock* shmClockPtr = NULL;
     MSG* shmMsgPtr = NULL;
     PCB* shmPCBArrayPtr = NULL;
-
-
-
 
 
     //Queues
