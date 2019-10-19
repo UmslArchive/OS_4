@@ -84,11 +84,12 @@ int main(int arg, char* argv[]) {
 
     //Initalize shared memory
     initClock(shmClockPtr);
+    PCB* it = shmPCBArrayPtr;
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
-        PCB* it = shmPCBArrayPtr;
         initPCB(it, i + 1, 0);
         ++it;
     }
+    it = NULL;
     resetMSG(shmMsgPtr);
 
     printSharedMemory(shmClockID, shmClockPtr);
