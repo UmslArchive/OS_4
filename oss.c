@@ -48,6 +48,7 @@ void scheduleProcess();
 void dispatchProcess();
 void writeLog();
 void printSharedMemory(int shmid, void* shmObj);
+PCB* selectPCB(PCB* pcbArr, unsigned int sPID);
 
 //---------------------MAIN-------------------------------
 
@@ -91,14 +92,8 @@ int main(int arg, char* argv[]) {
     }
     it = NULL;
     resetMSG(shmMsgPtr);
-
-    for(i = 0; i < 50; ++i) {
-            tickClock(shmClockPtr, 1, 100000000);
-        printSharedMemory(shmClockID, shmClockPtr);
-    }
     
-    //printSharedMemory(shmMsgID, shmMsgPtr);
-    //printSharedMemory(shmPCBArrayID, shmPCBArrayPtr);
+    printSharedMemory(shmPCBArrayID, shmPCBArrayPtr);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -221,4 +216,22 @@ void printSharedMemory(int shmid, void* shmPtr) {
             ++tempPCB;
         }
     }
+}
+
+//The index of the bit vector has a 1 to 1 correspondence to the simulated pid value of a process,
+//so this function allows one to select specific PCBs from the array by returning a ptr.
+PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
+    int i;
+
+    if(sPID > MAX_QUEUABLE_PROCESSES) {
+        fprintf(stderr, "ERROR: Invalid sPID selection\n");
+        return NULL;
+    }
+
+    PCB* temp = pcbArr;
+    for(i = 0; i < sPID; ++i) {
+        ++temp;
+    }
+    
+    return temp;
 }
