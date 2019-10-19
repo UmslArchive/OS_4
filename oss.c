@@ -191,7 +191,7 @@ void printSharedMemory(int shmid, void* shmPtr) {
     //Print Clock
     if(shmid == shmClockID) {
         tempClock = (Clock*)shmPtr;
-        fprintf(stderr, "Clock: %ud:%u\n\n", tempClock->seconds, tempClock->nanoseconds);
+        fprintf(stderr, "Clock: %u:%u\n\n", tempClock->seconds, tempClock->nanoseconds);
     }
     
     //Print MSG
