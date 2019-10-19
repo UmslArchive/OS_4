@@ -46,7 +46,7 @@ void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl);
 void spawnProcess();
 void scheduleProcess();
 void dispatchProcess();
-void log();
+void writeLog();
 
 //---------------------MAIN-------------------------------
 
