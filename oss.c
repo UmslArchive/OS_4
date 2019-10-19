@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/shm.h>
@@ -97,7 +98,7 @@ sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid){
 
     //Init semaphore
     if(sem_init(temp, 1, 1) == -1) {
-        PERROR("ERROR:oss:sem_init failed");
+        perror("ERROR:oss:sem_init failed");
         exit(1);
     }
 
