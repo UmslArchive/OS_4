@@ -26,6 +26,7 @@ typedef enum { OFF, ON } BitState;
 const int MAX_QUEUABLE_PROCESSES = 18;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
+const int BIT_VEC_SIZE = 3;
 
 //Shared memory IDs
 int shmSemID = 0;
@@ -51,8 +52,8 @@ void dispatchProcess();
 void writeLog();
 void printSharedMemory(int shmid, void* shmObj);
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID);
-void setBit(char* arr, int position, BitState setting);
-int readBit(char* arr, int position);
+void setBit(char arr[], int position, BitState setting);
+int readBit(char arr[], int position);
 
 //---------------------MAIN-------------------------------
 
@@ -102,15 +103,15 @@ int main(int arg, char* argv[]) {
     pcbIterator->priority = 100;
 
     //Bit vector containing active process flags
-    char activeProcesses[3];
+    char activeProcesses[BIT_VEC_SIZE];
     memset(activeProcesses, 0, sizeof(int) * 3);
     
 
-    setBit(&activeProcesses[0], 3, ON);
-    printf("bit3=%d\n", readBit(&activeProcesses, 3));
+    setBit(activeProcesses, 3, ON);
+    printf("bit3=%d\n", readBit(activeProcesses, 3));
 
-    setBit(&activeProcesses[0], 3, OFF);
-    printf("bit3=%d\n", readBit(&activeProcesses, 3));
+    setBit(activeProcesses, 3, OFF);
+    printf("bit3=%d\n", readBit(activeProcesses, 3));
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -267,7 +268,7 @@ PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
     return temp;
 }
 
-void setBit(char* arr, int position, BitState setting) {
+void setBit(char arr[], int position, BitState setting) {
     switch(setting) {
         case ON:
             printf("on\n");
@@ -279,6 +280,6 @@ void setBit(char* arr, int position, BitState setting) {
     }
 }
 
-int readBit(char* arr, int position) {
+int readBit(char arr[], int position) {
     return 100;
 }
