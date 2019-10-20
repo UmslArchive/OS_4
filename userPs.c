@@ -68,6 +68,12 @@ int main(int arg, char* argv[]) {
     MSG* shmMsgPtr = NULL;
     PCB* shmPCBArrayPtr = NULL;
 
+    //Bit vector containing active process flags
+    int activeProcesses[3];
+    memset(activeProcesses, '/0', sizeof(int) * 3);
+
+    printf("%d%d%d\n", activeProcesses[0], activeProcesses[1], activeProcesses[2]);
+
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
 
     while(1) {
