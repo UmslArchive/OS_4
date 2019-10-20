@@ -102,18 +102,18 @@ int main(int arg, char* argv[]) {
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    for(k = 0; k < 100; ++k) {
-        spawnProcess();
-        scheduleProcess();
+    // for(k = 0; k < 100; ++k) {
+    //     spawnProcess();
+    //     scheduleProcess();
 
-        //Critical section
-        sem_wait(shmSemPtr);
+    //     //Critical section
+    //     sem_wait(shmSemPtr);
         
-            dispatchProcess();
+    //         dispatchProcess();
 
-        sem_close(shmSemPtr);
+    //     sem_close(shmSemPtr);
         
-    }
+    // }
 
     //-=-=-=--=-==-=Termination-=-=-=-=-==-=-=--=-=-=-=
 

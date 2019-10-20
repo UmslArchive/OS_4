@@ -76,12 +76,12 @@ int main(int arg, char* argv[]) {
 
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
 
-    while(1) {
-        sem_wait(shmSemPtr);
-            while(checkForMSG == 0);
-        sem_close(shmSemPtr);
-        run();
-    }
+    // while(1) {
+    //     sem_wait(shmSemPtr);
+    //         while(checkForMSG == 0);
+    //     sem_close(shmSemPtr);
+    //     run();
+    // }
 
     //-=-=-==-=-=-=-Finalization/Termination--==--==-=--==-
 
