@@ -51,8 +51,8 @@ void dispatchProcess();
 void writeLog();
 void printSharedMemory(int shmid, void* shmObj);
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID);
-void setBit(char* arr, int position, BitState setting);
-int readBit(char* arr, int position);
+void setBit(char* arr[], int position, BitState setting);
+int readBit(char* arr[], int position);
 
 //---------------------MAIN-------------------------------
 
@@ -267,7 +267,7 @@ PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
     return temp;
 }
 
-void setBit(char* arr, int position, BitState setting) {
+void setBit(char* arr[], int position, BitState setting) {
     switch(setting) {
         case ON:
             printf("on\n");
@@ -279,6 +279,6 @@ void setBit(char* arr, int position, BitState setting) {
     }
 }
 
-int readBit(char* arr, int position) {
+int readBit(char* arr[], int position) {
     return 100;
 }
