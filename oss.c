@@ -106,10 +106,10 @@ int main(int arg, char* argv[]) {
     memset(activeProcesses, 0, sizeof(int) * 3);
     
 
-    setBit(&activeProcesses, 3, ON);
+    setBit(activeProcesses, 3, ON);
     printf("bit3=%d\n", readBit(&activeProcesses, 3));
 
-    setBit(&activeProcesses, 3, OFF);
+    setBit(activeProcesses, 3, OFF);
     printf("bit3=%d\n", readBit(&activeProcesses, 3));
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
