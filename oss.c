@@ -20,6 +20,8 @@
 
 //========================GLOBALS========================
 
+typedef enum { OFF, ON } BitState;
+
 //Constants
 const int MAX_QUEUABLE_PROCESSES = 18;
 const int MAX_LOG_LINES = 10000;
@@ -49,6 +51,8 @@ void dispatchProcess();
 void writeLog();
 void printSharedMemory(int shmid, void* shmObj);
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID);
+void setBit(char* arr, int position, BitState setting);
+int readBit(char* arr, int position);
 
 //---------------------MAIN-------------------------------
 
@@ -97,12 +101,16 @@ int main(int arg, char* argv[]) {
 
     pcbIterator->priority = 100;
 
-    printSharedMemory(shmPCBArrayID, shmPCBArrayPtr);
-
     //Bit vector containing active process flags
     char activeProcesses[3];
     memset(activeProcesses, 0, sizeof(int) * 3);
-    printf("%d%d%d\n", activeProcesses[0], activeProcesses[1], activeProcesses[2]);
+    
+
+    setBit(&activeProcesses, 3, ON);
+    printf("bit3=%d\n", readBit(&activeProcesses, 3));
+
+    setBit(&activeProcesses, 3, OFF);
+    printf("bit3=%d\n", readBit(&activeProcesses, 3));
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -257,4 +265,20 @@ PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
     }
     
     return temp;
+}
+
+void setBit(char* arr, int position, BitState setting) {
+    switch(setting) {
+        case ON:
+            printf("on\n");
+        break;
+
+        case OFF:
+            printf("off\n");
+        break;
+    }
+}
+
+int readBit(char* arr, int position) {
+    return 100;
 }
