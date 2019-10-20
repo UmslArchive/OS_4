@@ -15,9 +15,6 @@
 
 //----------------------------------------
 
-//Constants
-const int MAX_QUEUABLE_PROCESSES = 18;
-
 //Structs
 typedef struct {
     unsigned int seconds;
