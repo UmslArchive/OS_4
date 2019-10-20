@@ -101,7 +101,7 @@ int main(int arg, char* argv[]) {
 
     //Bit vector containing active process flags
     char activeProcesses[3];
-    memset(activeProcesses, '/0', sizeof(int) * 3);
+    memset(activeProcesses, 0, sizeof(int) * 3);
     printf("%d%d%d\n", activeProcesses[0], activeProcesses[1], activeProcesses[2]);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
