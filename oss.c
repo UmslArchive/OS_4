@@ -21,6 +21,7 @@
 //========================GLOBALS========================
 
 //Constants
+const int MAX_QUEUABLE_PROCESSES = 18;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
 

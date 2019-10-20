@@ -21,7 +21,6 @@
 
 //Constants
 const int SHM_ATTACH_FLAGS = 0777;
-const int MAX_QUEUABLE_PROCESSES = 18;
 
 //Shared memory IDs
 int shmSemID = 0;
