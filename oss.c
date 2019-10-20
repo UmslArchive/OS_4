@@ -52,8 +52,8 @@ void dispatchProcess();
 void writeLog();
 void printSharedMemory(int shmid, void* shmObj);
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID);
-void setBit(char arr[], int position, BitState setting);
-int readBit(char arr[], int position);
+void setBit(unsigned char arr[], int position, BitState setting);
+int readBit(unsigned char arr[], int position);
 
 //---------------------MAIN-------------------------------
 
@@ -103,7 +103,7 @@ int main(int arg, char* argv[]) {
     pcbIterator->priority = 100;
 
     //Bit vector containing active process flags
-    char activeProcesses[BIT_VEC_SIZE];
+    unsigned char activeProcesses[BIT_VEC_SIZE];
     memset(activeProcesses, 0, sizeof(int) * 3);
     
 
@@ -268,18 +268,38 @@ PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
     return temp;
 }
 
-void setBit(char arr[], int position, BitState setting) {
+void setBit(unsigned char arr[], int position, BitState setting) {
+    int arrIndex = position / sizeof(char);
+    int bitPos = position % sizeof(char);
+
+    unsigned char flag = 1;
+
+    flag = flag << bitPos;
+    
     switch(setting) {
         case ON:
-            printf("on\n");
-        break;
+            arr[arrIndex] |= flag;
+            break;
 
         case OFF:
-            printf("off\n");
-        break;
+            flag = ~flag;
+            arr[arrIndex] &= flag;
+            break;
+
+        default:
+            fprintf(stderr, "Invalid bitvector setting selected in setBit()\n");
     }
 }
 
-int readBit(char arr[], int position) {
-    return 100;
+int readBit(unsigned char arr[], int position) {
+    int arrIndex = position / sizeof(char);
+    int bitPos = position % sizeof(char);
+
+    unsigned char flag = 1;
+    flag = flag << bitPos;
+
+    if(arr[arrIndex] & flag)
+        return 1;
+        
+    return 0;
 }
