@@ -127,7 +127,12 @@ int main(int arg, char* argv[]) {
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    
+    pid = fork();
+    if(pid == 0) {
+        execl("./usrPs", "usrPs", (char*)NULL);
+    }
+
+    sleep(5);
     
     //-=-=-=--=-==-=Termination-=-=-=-=-==-=-=--=-=-=-=
     cleanupAll();
@@ -243,7 +248,7 @@ void terminate(unsigned char activePsArr[], PCB* pcbArr) {
     //Send Kill signals to every child process in the system for detachment
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
         if(readBit(activePsArr, i) == ON) {
-            kill(iter->actualPID, SIGILL);
+            kill(iter->actualPID + 1, SIGQUIT);
         }
         ++iter;
     }

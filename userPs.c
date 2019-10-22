@@ -40,6 +40,9 @@ int main(int arg, char* argv[]) {
 
     //-=-==--=-=-==-=-Initialization-==-=-=-=-=-=--==-=-
 
+    //Register signal handler
+    signal(SIGQUIT, quitSignalHandler);
+
     //Utility variables
     int i, j, k;
     char convertString[255];
@@ -72,8 +75,6 @@ int main(int arg, char* argv[]) {
 
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
 
-
-
     //-=-=-==-=-=-=-Finalization/Termination--==--==-=--==-
 
     return 100;
@@ -88,47 +89,54 @@ sem_t* attachShmSemaphore(key_t* key, size_t* size, int* shmid) {
     }
 
     //Assign pointer
-    sem_t* temp = (sem_t*)shmat(*shmid, NULL, 0);
-    if(temp == (sem_t*) -1) {
+    void* temp = (void*)shmat(*shmid, NULL, 0);
+    if(temp == (void*) -1) {
         perror("ERROR:oss:shmat failed(semaphore)");
         exit(1);
     }
 
-    return temp;
+    return (sem_t*)temp;
 }
 
 void* attachSharedMemory(key_t* key, size_t* size, int* shmid) {
-    //Retrieve shmid
+    //Allocate shared memory and get an id
     *shmid = shmget(*key, *size, SHM_ATTACH_FLAGS);
     if(*shmid < 0) {
-        perror("ERROR:oss:shmget failed");
-        exit(1);
+        switch(*key) {
+            case SHM_KEY_CLOCK:
+            perror("ERROR:oss:shmid failed(clock)");
+            break;
+
+            case SHM_KEY_MSG:
+            perror("ERROR:oss:shmid failed(msg)");
+            break;
+
+            case SHM_KEY_PCB_ARRAY:
+            perror("ERROR:oss:shmid failed(pcbArray)");
+            break;
+        }
+        detachAll();
+        exit(10);
     }
 
     //Assign pointer
     void* temp = shmat(*shmid, NULL, 0);
-
-    switch(*key) {
-        case SHM_KEY_CLOCK:
-        if(temp == (Clock*)-1) {
+    if(temp == (void*) -1) {
+        switch(*key) {
+            case SHM_KEY_CLOCK:
             perror("ERROR:oss:shmat failed(clock)");
-            exit(1);
-        }
-        break;
+            break;
 
-        case SHM_KEY_MSG:
-        if(temp == (MSG*)-1) {
+            case SHM_KEY_MSG:
             perror("ERROR:oss:shmat failed(msg)");
-            exit(1);
-        }
-        break;
+            break;
 
-        case SHM_KEY_PCB_ARRAY:
-        if(temp == (PCB*)-1) {
+            case SHM_KEY_PCB_ARRAY:
             perror("ERROR:oss:shmat failed(pcbArray)");
-            exit(1);
+            break;
         }
-        break;
+        detachAll();
+        exit(20);
     }
 
     return temp;
