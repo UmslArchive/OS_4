@@ -66,6 +66,7 @@ int main(int arg, char* argv[]) {
     char convertString[255];
     int exitStatus;
     pid_t pid = 0;
+    PCB* pcbIterator = NULL;
 
     //Shared mem keys
     key_t shmSemKey = SHM_KEY_SEM;
@@ -94,13 +95,13 @@ int main(int arg, char* argv[]) {
             (&shmPCBArrayKey, &shmPCBArraySize, &shmPCBArrayID);
 
     //Queues
-    unsigned int* queue1;
-    unsigned int* queue2;
-    unsigned int* queue3;
+    unsigned int* queue1 = NULL;
+    unsigned int* queue2 = NULL;
+    unsigned int* queue3 = NULL;
 
     //Initalize shared memory
     initClock(shmClockPtr);
-    PCB* pcbIterator = shmPCBArrayPtr;
+    pcbIterator = shmPCBArrayPtr;
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
         initPCB(pcbIterator, i + 1, 0);
         ++pcbIterator;
@@ -108,15 +109,9 @@ int main(int arg, char* argv[]) {
     pcbIterator = NULL;
     resetMSG(shmMsgPtr);
 
-    pcbIterator = selectPCB(shmPCBArrayPtr, 3);
-
-    pcbIterator->priority = 100;
-
     //Bit vector containing active process flags
     unsigned char activeProcesses[BIT_VEC_SIZE];
     memset(activeProcesses, 0, sizeof(int) * 3);
-
-    setBit(activeProcesses, 50, ON);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
