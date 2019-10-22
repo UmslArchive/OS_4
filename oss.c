@@ -39,7 +39,7 @@ void* createSharedMemory(key_t* key, size_t* size, int* shmid);
 //Cleanup
 void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl);
 void cleanupAll();
-void terminate(unsigned char arr[], PCB* pcbArr);
+void terminate(unsigned char activePsArr[], PCB* pcbArr);
 
 //Process handling
 void spawnProcess();
@@ -213,12 +213,20 @@ void cleanupAll() {
     cleanupSharedMemory(&shmPCBArrayID, &shmPCBArrayCtl);
 }
 
-void terminate(unsigned char arr[], PCB* pcbArr) {
+void terminate(unsigned char activePsArr[], PCB* pcbArr) {
+    int i;
+    PCB* iter = pcbArr;
+
     //Set all shared memory to deallocate upon total detachment
     cleanupAll();
 
     //Send Kill signals to every child process in the system for detachment
-
+    for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+        if(readBit(activePsArr, i) == 1) {
+            kill(iter->actualPID, SIGILL);
+        }
+        ++iter;
+    }
 }
 
 void printSharedMemory(int shmid, void* shmPtr) {
