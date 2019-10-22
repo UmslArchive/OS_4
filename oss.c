@@ -207,10 +207,17 @@ void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl) {
 }
 
 void cleanupAll() {
-    cleanupSharedMemory(&shmSemID, &shmSemCtl);
-    cleanupSharedMemory(&shmClockID, &shmClockCtl);
-    cleanupSharedMemory(&shmMsgID, &shmMsgCtl);
-    cleanupSharedMemory(&shmPCBArrayID, &shmPCBArrayCtl);
+    if(shmSemID > 0)
+        cleanupSharedMemory(&shmSemID, &shmSemCtl);
+
+    if(shmClockID > 0)   
+        cleanupSharedMemory(&shmClockID, &shmClockCtl);
+    
+    if(shmMsgID > 0)
+        cleanupSharedMemory(&shmMsgID, &shmMsgCtl);
+
+    if(shmPCBArrayID > 0)
+        cleanupSharedMemory(&shmPCBArrayID, &shmPCBArrayCtl);
 }
 
 void terminate(unsigned char activePsArr[], PCB* pcbArr) {
@@ -222,7 +229,7 @@ void terminate(unsigned char activePsArr[], PCB* pcbArr) {
 
     //Send Kill signals to every child process in the system for detachment
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
-        if(readBit(activePsArr, i) == 1) {
+        if(readBit(activePsArr, i) == ON) {
             kill(iter->actualPID, SIGILL);
         }
         ++iter;
