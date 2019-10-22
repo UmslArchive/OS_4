@@ -222,7 +222,7 @@ void cleanupAll() {
 
 void terminate(unsigned char activePsArr[], PCB* pcbArr) {
     int i;
-    PCB* iter = pcbArr;
+    const PCB* iter = pcbArr;
 
     //Set all shared memory to deallocate upon total detachment
     cleanupAll();
