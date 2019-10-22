@@ -25,10 +25,13 @@ struct shmid_ds shmPCBArrayCtl;
 
 //====================SIGNAL HANDLERS====================
 
+void quitSignalHandler(int sig);
+
 //=================FUNCTION=PROTOTYPES===================
 sem_t* attachShmSemaphore(key_t* key, size_t* size, int* shmid);
 void* attachSharedMemory(key_t* key, size_t* size, int* shmid);
 int checkForMSG();
+void detachAll();
 
 void run();
 
@@ -69,12 +72,7 @@ int main(int arg, char* argv[]) {
 
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
 
-    // while(1) {
-    //     sem_wait(shmSemPtr);
-    //         while(checkForMSG == 0);
-    //     sem_close(shmSemPtr);
-    //     run();
-    // }
+
 
     //-=-=-==-=-=-=-Finalization/Termination--==--==-=--==-
 
@@ -134,4 +132,22 @@ void* attachSharedMemory(key_t* key, size_t* size, int* shmid) {
     }
 
     return temp;
+}
+
+void detachAll() {
+    if(shmClockID > 0)
+        shmdt(&shmClockID);
+    if(shmMsgID > 0)
+        shmdt(&shmMsgID);
+    if(shmPCBArrayID > 0)
+        shmdt(&shmPCBArrayID);
+    if(shmSemID > 0)
+        shmdt(&shmSemID);
+
+    fprintf(stderr, "Child PID(%d), simPID(%d) detached\n", getpid(), 5);
+}
+
+void quitSignalHandler(int sig) {
+    detachAll();
+    exit(99);
 }

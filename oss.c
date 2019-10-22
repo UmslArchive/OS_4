@@ -14,7 +14,7 @@ typedef enum { OFF, ON } BitState;
 const int MAX_QUEUABLE_PROCESSES = 18;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
-const int BIT_VEC_SIZE = 3;
+#define BIT_VEC_SIZE 3
 
 //Shared memory IDs
 int shmSemID = 0;
@@ -28,7 +28,17 @@ struct shmid_ds shmMsgCtl;
 struct shmid_ds shmClockCtl;
 struct shmid_ds shmPCBArrayCtl;
 
+//Shared memory pointers
+sem_t* shmSemPtr = NULL;
+Clock* shmClockPtr = NULL;
+MSG* shmMsgPtr = NULL;
+PCB* shmPCBArrayPtr = NULL;
+
+unsigned char activeProcesses[BIT_VEC_SIZE];
+
 //====================SIGNAL HANDLERS====================
+
+void interruptSignalHandler(int sig);
 
 //=================FUNCTION=PROTOTYPES===================
 
@@ -60,6 +70,9 @@ int readBit(unsigned char arr[], int position);
 int main(int arg, char* argv[]) {
 
     //-=-=-=-=-=Initialization-=-=-=--=--=-=-=--=-
+
+    //Register signal handlers
+    signal(SIGINT, interruptSignalHandler);
 
     //Utility variables
     int i, j, k;
@@ -109,25 +122,13 @@ int main(int arg, char* argv[]) {
     pcbIterator = NULL;
     resetMSG(shmMsgPtr);
 
-    //Bit vector containing active process flags
-    unsigned char activeProcesses[BIT_VEC_SIZE];
+    //Init bit vector
     memset(activeProcesses, 0, sizeof(int) * 3);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    // for(k = 0; k < 100; ++k) {
-    //     spawnProcess();
-    //     scheduleProcess();
-
-    //     //Critical section
-    //     sem_wait(shmSemPtr);
-        
-    //         dispatchProcess();
-
-    //     sem_close(shmSemPtr);
-        
-    // }
-
+    
+    
     //-=-=-=--=-==-=Termination-=-=-=-=-==-=-=--=-=-=-=
     cleanupAll();
 
@@ -246,6 +247,9 @@ void terminate(unsigned char activePsArr[], PCB* pcbArr) {
         }
         ++iter;
     }
+
+    fprintf(stderr, "done\n");
+    exit(100);
 }
 
 void printSharedMemory(int shmid, void* shmPtr) {
@@ -360,4 +364,9 @@ int readBit(unsigned char arr[], int position) {
         return 1;
         
     return 0;
+}
+
+void interruptSignalHandler(int sig) {
+    fprintf(stderr, "\nOSS caught Ctrl-C interrupt.\nCleaning up...\n");
+    terminate(activeProcesses, shmPCBArrayPtr);
 }
