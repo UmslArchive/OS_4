@@ -7,6 +7,18 @@
 #ifndef SHARED_MEM_H
 #define SHARED_MEM_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/shm.h>
+#include <sys/ipc.h>
+#include <errno.h>
+#include <semaphore.h>
+#include <signal.h>
+
 //Keys
 #define SHM_KEY_SEM         0x66666666
 #define SHM_KEY_PCB_ARRAY   0x77777777
@@ -22,6 +34,7 @@ typedef struct {
 } Clock;
 
 typedef struct {
+    pid_t actualPID;
     unsigned int simPID;
     unsigned int priority;
     Clock cpuTimeUsed;

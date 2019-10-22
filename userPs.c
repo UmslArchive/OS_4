@@ -4,17 +4,6 @@
 //Date:     10/22/19
 //-----------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/shm.h>
-#include <sys/ipc.h>
-#include <errno.h>
-#include <semaphore.h>
-#include <signal.h>
-
 #include "sharedMem.h"
 
 //=======================GLOBALS========================
@@ -52,21 +41,31 @@ int main(int arg, char* argv[]) {
     int i, j, k;
     char convertString[255];
 
-    //Shared memory variables
-    key_t shmSemKey = SHM_KEY_SEM;                  //keys
+    //Shared mem keys
+    key_t shmSemKey = SHM_KEY_SEM;
     key_t shmClockKey = SHM_KEY_CLOCK;
     key_t shmMsgKey = SHM_KEY_MSG;
     key_t shmPCBArrayKey = SHM_KEY_PCB_ARRAY;
 
-    size_t shmSemSize = sizeof(sem_t);              //sizes
+    //Shared mem sizes
+    size_t shmSemSize = sizeof(sem_t);
     size_t shmClockSize = sizeof(Clock);
     size_t shmMsgSize = sizeof(MSG);
     size_t shmPCBArraySize = 18 * sizeof(PCB);
 
-    sem_t* shmSemPtr = NULL;                        //pointers
-    Clock* shmClockPtr = NULL;
-    MSG* shmMsgPtr = NULL;
-    PCB* shmPCBArrayPtr = NULL;
+    //Shared mem ptrs
+    sem_t* shmSemPtr = 
+        attachShmSemaphore(&shmSemKey, &shmSemSize, &shmSemID);
+
+    Clock* shmClockPtr = 
+        (Clock*)attachSharedMemory(&shmClockKey, &shmClockSize, &shmClockID);
+
+    MSG* shmMsgPtr = 
+        (MSG*)attachSharedMemory(&shmMsgKey, &shmMsgSize, &shmMsgID);
+
+    PCB* shmPCBArrayPtr = 
+        (PCB*)attachSharedMemory
+            (&shmPCBArrayKey, &shmPCBArraySize, &shmPCBArrayID);
 
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
 

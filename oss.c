@@ -4,18 +4,6 @@
 //Date:     10/22/19
 //-----------------------------------------------------
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/shm.h>
-#include <sys/ipc.h>
-#include <errno.h>
-#include <semaphore.h>
-#include <signal.h>
-
 #include "sharedMem.h"
 
 //========================GLOBALS========================
@@ -43,19 +31,31 @@ struct shmid_ds shmPCBArrayCtl;
 //====================SIGNAL HANDLERS====================
 
 //=================FUNCTION=PROTOTYPES===================
+
+//Shm create
 sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid);
 void* createSharedMemory(key_t* key, size_t* size, int* shmid);
+
+//Cleanup
 void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl);
+void cleanupAll();
+void terminate(unsigned char arr[], PCB* pcbArr);
+
+//Process handling
 void spawnProcess();
 void scheduleProcess();
 void dispatchProcess();
-void writeLog();
+
+//Utility
+void writeLog();                                                 
 void printSharedMemory(int shmid, void* shmObj);
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID);
 void setBit(unsigned char arr[], int position, BitState setting);
 int readBit(unsigned char arr[], int position);
 
+//========================================================
 //---------------------MAIN-------------------------------
+//========================================================
 
 int main(int arg, char* argv[]) {
 
@@ -67,21 +67,31 @@ int main(int arg, char* argv[]) {
     int exitStatus;
     pid_t pid = 0;
 
-    //Shared memory variables
-    key_t shmSemKey = SHM_KEY_SEM;                  //keys
+    //Shared mem keys
+    key_t shmSemKey = SHM_KEY_SEM;
     key_t shmClockKey = SHM_KEY_CLOCK;
     key_t shmMsgKey = SHM_KEY_MSG;
     key_t shmPCBArrayKey = SHM_KEY_PCB_ARRAY;
 
-    size_t shmSemSize = sizeof(sem_t);              //sizes
+    //Shared mem sizes
+    size_t shmSemSize = sizeof(sem_t);
     size_t shmClockSize = sizeof(Clock);
     size_t shmMsgSize = sizeof(MSG);
     size_t shmPCBArraySize = 18 * sizeof(PCB);
 
-    sem_t* shmSemPtr = createShmSemaphore(&shmSemKey, &shmSemSize, &shmSemID);                        //pointers
-    Clock* shmClockPtr = (Clock*)createSharedMemory(&shmClockKey, &shmClockSize, &shmClockID);
-    MSG* shmMsgPtr = (MSG*)createSharedMemory(&shmMsgKey, &shmMsgSize, &shmMsgID);
-    PCB* shmPCBArrayPtr = (PCB*)createSharedMemory(&shmPCBArrayKey, &shmPCBArraySize, &shmPCBArrayID);
+    //Shared mem pointers
+    sem_t* shmSemPtr = 
+        createShmSemaphore(&shmSemKey, &shmSemSize, &shmSemID);
+    
+    Clock* shmClockPtr = 
+        (Clock*)createSharedMemory(&shmClockKey, &shmClockSize, &shmClockID);
+    
+    MSG* shmMsgPtr = 
+        (MSG*)createSharedMemory(&shmMsgKey, &shmMsgSize, &shmMsgID);
+    
+    PCB* shmPCBArrayPtr = 
+        (PCB*)createSharedMemory
+            (&shmPCBArrayKey, &shmPCBArraySize, &shmPCBArrayID);
 
     //Queues
     unsigned int* queue1;
@@ -105,13 +115,8 @@ int main(int arg, char* argv[]) {
     //Bit vector containing active process flags
     unsigned char activeProcesses[BIT_VEC_SIZE];
     memset(activeProcesses, 0, sizeof(int) * 3);
-    
 
-    setBit(activeProcesses, 3, ON);
-    printf("bit3=%d\n", readBit(activeProcesses, 3));
-
-    setBit(activeProcesses, 3, OFF);
-    printf("bit3=%d\n", readBit(activeProcesses, 3));
+    setBit(activeProcesses, 50, ON);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -129,12 +134,8 @@ int main(int arg, char* argv[]) {
     // }
 
     //-=-=-=--=-==-=Termination-=-=-=-=-==-=-=--=-=-=-=
+    cleanupAll();
 
-    cleanupSharedMemory(&shmSemID, &shmSemCtl);
-    cleanupSharedMemory(&shmClockID, &shmClockCtl);
-    cleanupSharedMemory(&shmMsgID, &shmMsgCtl);
-    cleanupSharedMemory(&shmPCBArrayID, &shmPCBArrayCtl);
-    
     return 0;
 }
 
@@ -210,11 +211,27 @@ void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl) {
     }
 }
 
+void cleanupAll() {
+    cleanupSharedMemory(&shmSemID, &shmSemCtl);
+    cleanupSharedMemory(&shmClockID, &shmClockCtl);
+    cleanupSharedMemory(&shmMsgID, &shmMsgCtl);
+    cleanupSharedMemory(&shmPCBArrayID, &shmPCBArrayCtl);
+}
+
+void terminate(unsigned char arr[], PCB* pcbArr) {
+    //Set all shared memory to deallocate upon total detachment
+    cleanupAll();
+
+    //Send Kill signals to every child process in the system for detachment
+
+}
+
 void printSharedMemory(int shmid, void* shmPtr) {
     int i;
     Clock* tempClock = NULL;
     MSG* tempMSG = NULL;
     PCB* tempPCB = NULL;
+    unsigned int tempSec, tempNano;
 
     //Don't print semaphore
     if(shmid == shmSemID)
@@ -223,40 +240,49 @@ void printSharedMemory(int shmid, void* shmPtr) {
     //Print Clock
     if(shmid == shmClockID) {
         tempClock = (Clock*)shmPtr;
-        fprintf(stderr, "Clock: %u:%u\n\n", tempClock->seconds, tempClock->nanoseconds);
+        fprintf(stderr, "Clock: %u:%u\n\n",
+                tempClock->seconds, tempClock->nanoseconds);
     }
     
     //Print MSG
     if(shmid == shmMsgID) {
         tempMSG = (MSG*)shmPtr;
-        fprintf(stderr, "MSG: simPID=%u quantum=%u\n\n", tempMSG->simPID, tempMSG->quantum);
+        fprintf(stderr, "MSG: simPID=%u quantum=%u\n\n",
+                tempMSG->simPID, tempMSG->quantum);
     }
 
     //Print PCB array
     if(shmid == shmPCBArrayID) {
         tempPCB = (PCB*)shmPtr;
         for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
-            fprintf(stderr, "PCB#%d:\n  simPID=%u\n  prio=%u\n  alive=%u:%u\n  cpuUseTime=%u:%u\n  pBurst=%u:%u\n\n",
-                i + 1, 
-                tempPCB->simPID, 
-                tempPCB->priority, 
-                tempPCB->totalTimeAlive.seconds, tempPCB->totalTimeAlive.nanoseconds,
-                tempPCB->cpuTimeUsed.seconds, tempPCB->cpuTimeUsed.nanoseconds, 
-                tempPCB->prevBurst.seconds, tempPCB->prevBurst.nanoseconds
-            );
+            fprintf(stderr, "PCB#%d:\n  ", i + 1);
+            fprintf(stderr, "simPID=%u\n  ", tempPCB->simPID);
+            fprintf(stderr, "prio=%u\n  ", tempPCB->priority);
 
+            tempSec = tempPCB->totalTimeAlive.seconds;
+            tempNano = tempPCB->totalTimeAlive.nanoseconds;
+            fprintf(stderr, "alive=%u:%u\n  ", tempSec, tempNano);
+
+            tempSec = tempPCB->cpuTimeUsed.seconds;
+            tempNano = tempPCB->cpuTimeUsed.nanoseconds;
+            fprintf(stderr, "cpuUseTime=%u:%u\n  ", tempSec, tempNano);
+
+            tempSec = tempPCB->prevBurst.seconds;
+            tempNano = tempPCB->prevBurst.nanoseconds;
+            fprintf(stderr, "pBurst=%u:%u\n\n", tempSec, tempNano);
+        
             ++tempPCB;
         }
     }
 }
 
-//The index of the bit vector has a 1 to 1 correspondence to the simulated pid value of a process.
-//This function allows one to select specific PCBs from the array by returning a ptr.
+//The index of the bit vector has a 1 to 1 correspondence to the simulated pid.
+//This function allows selection ofspecific PCBs from the array by ptr return.
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
     int i;
 
-    if(sPID > MAX_QUEUABLE_PROCESSES) {
-        fprintf(stderr, "ERROR: Invalid sPID selection\n");
+    if(sPID >= MAX_QUEUABLE_PROCESSES || sPID < 0) {
+        fprintf(stderr, "ERROR: Invalid sPID selection in selectPCB()\n");
         return NULL;
     }
 
@@ -269,6 +295,11 @@ PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
 }
 
 void setBit(unsigned char arr[], int position, BitState setting) {
+    if(position >= MAX_QUEUABLE_PROCESSES || position < 0) {
+        fprintf(stderr, "Invalid position selected in setBit()\n");
+        return;
+    }
+
     int arrIndex = position / sizeof(char);
     int bitPos = position % sizeof(char);
 
@@ -292,6 +323,11 @@ void setBit(unsigned char arr[], int position, BitState setting) {
 }
 
 int readBit(unsigned char arr[], int position) {
+    if(position >= MAX_QUEUABLE_PROCESSES || position < 0) {
+        fprintf(stderr, "Invalid position selected in setBit()\n");
+        return -1;
+    }
+
     int arrIndex = position / sizeof(char);
     int bitPos = position % sizeof(char);
 
