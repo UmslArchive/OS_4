@@ -141,57 +141,67 @@ sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid) {
     *shmid = shmget(*key, *size, SHM_CREATE_FLAGS);
     if(*shmid < 0) {
         perror("ERROR:oss:shmget failed(semaphore)");
+        cleanupAll(); //In case someone mixes up creation order
         exit(1);
     }
 
     //Assign pointer
-    sem_t* temp = (sem_t*)shmat(*shmid, NULL, 0);
-    if(temp == (sem_t*) -1) {
+    void* temp = shmat(*shmid, NULL, 0);
+    if(temp == (void*) -1) {
         perror("ERROR:oss:shmat failed(semaphore)");
+        cleanupAll();
         exit(1);
     }
 
     //Init semaphore
     if(sem_init(temp, 1, 1) == -1) {
         perror("ERROR:oss:sem_init failed");
+        cleanupAll();
         exit(1);
     }
 
-    return temp;
+    return (sem_t*)temp;
 }
 
 void* createSharedMemory(key_t* key, size_t* size, int* shmid) {
     //Allocate shared memory and get an id
     *shmid = shmget(*key, *size, SHM_CREATE_FLAGS);
     if(*shmid < 0) {
-        perror("ERROR:oss:shmget failed");
-        exit(1);
+        switch(*key) {
+            case SHM_KEY_CLOCK:
+            perror("ERROR:oss:shmid failed(clock)");
+            break;
+
+            case SHM_KEY_MSG:
+            perror("ERROR:oss:shmid failed(msg)");
+            break;
+
+            case SHM_KEY_PCB_ARRAY:
+            perror("ERROR:oss:shmid failed(pcbArray)");
+            break;
+        }
+        cleanupAll();
+        exit(10);
     }
 
     //Assign pointer
     void* temp = shmat(*shmid, NULL, 0);
-
-    switch(*key) {
-        case SHM_KEY_CLOCK:
-        if(temp == (Clock*)-1) {
+    if(temp == (void*) -1) {
+        switch(*key) {
+            case SHM_KEY_CLOCK:
             perror("ERROR:oss:shmat failed(clock)");
-            exit(1);
-        }
-        break;
+            break;
 
-        case SHM_KEY_MSG:
-        if(temp == (MSG*)-1) {
+            case SHM_KEY_MSG:
             perror("ERROR:oss:shmat failed(msg)");
-            exit(1);
-        }
-        break;
+            break;
 
-        case SHM_KEY_PCB_ARRAY:
-        if(temp == (PCB*)-1) {
+            case SHM_KEY_PCB_ARRAY:
             perror("ERROR:oss:shmat failed(pcbArray)");
-            exit(1);
+            break;
         }
-        break;
+        cleanupAll();
+        exit(20);
     }
 
     return temp;
@@ -220,6 +230,8 @@ void cleanupAll() {
         cleanupSharedMemory(&shmPCBArrayID, &shmPCBArrayCtl);
 }
 
+//Frees all shared memory, and sends the signal to all living child processes to
+//detach from shared memory.
 void terminate(unsigned char activePsArr[], PCB* pcbArr) {
     int i;
     const PCB* iter = pcbArr;
