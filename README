@@ -3,3 +3,39 @@ Class:    CS4760 Operating Systems
 Assign:   #4
 Date:     10/22/19
 -----------------------------------------------------
+
+This project was a doozy. It seemed like everytime I added a new part, the
+complexity drastically increased, especially as time to deadline grew shorter,
+I was unable to add components nearly as incrementally as at the beginning. This
+caused me to have to add big chunks of code near the end with little testing,
+which didn't turn out very well.
+
+State of the Project:
+
+    There are two development branches. "turnin" branch is the branch is the last 
+    branch that I was able to add pieces incrementally and test them decently,
+    but a huge chunk of the project missing. It only generates processes and
+    "runs" them at random while incrementing the clock.
+
+    The master branch contains a completely broken attempt at fleshing out the
+    round robin scheduler. There's not much to say about it except that it is
+    broken. It locks up.
+
+Regarding "turnin"
+
+    As far as shared memory leaks go, it handles them mostly well through signal
+    handlers, but for some reason the alarm signal doesn't work the same way
+    as the other signals that I used, and I'm not sure in what way, so 
+    it leaks when the alarm is reached.
+
+    Also it doesn't log anything as of now, but you can somewhat follow the
+    flow of the processes by watching the command line output.
+
+    Overall I would say that I got it a small step beyond the second incremental 
+    progress step suggested on the specification. It schedules random user
+    user processes over and over again, sort of logging the data by cli output,
+    and the overall flow of the process generation and dispatching sortof makes
+    sense. They just aren't scheduled as the name of the project would suggest.
+
+
+Gave it my all.

@@ -523,7 +523,7 @@ void terminate(unsigned char activePsArr[], PCB* pcbArr) {
     exit(100);
 }
 
-void printSharedMemory(int shmid, void* shmPtr) {
+void printSharedMemory(int shmid, void* shmPtr) {/*  */
     int i;
     Clock* tempClock = NULL;
     MSG* tempMSG = NULL;
