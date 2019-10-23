@@ -262,6 +262,12 @@ int main(int arg, char* argv[]) {
         }
         else {
             fprintf(stderr, "\n");
+            //DEBUG print bitvec
+            fprintf(stderr, "bitVec status: ");
+            for(k = 0; k < MAX_QUEUABLE_PROCESSES; ++k) {
+                fprintf(stderr, "%d ", readBit(activeProcesses, k));
+            }
+            fprintf(stderr, "\n");  
             //terminate(activeProcesses, shmPCBArrayPtr);
         }
 
@@ -295,6 +301,8 @@ int main(int arg, char* argv[]) {
                 }
 
                 if(shmMsgPtr->state == RAN) {
+                    //wait(&exitStatus);
+                    //setBit(activeProcesses, shmMsgPtr->simPID - 1, OFF);
                     shmMsgPtr->state = READY;
                     response = 1;
                 }
@@ -308,8 +316,6 @@ int main(int arg, char* argv[]) {
         randomSpawnTime = NULL;
 
     }
-
-    wait(NULL);
     
     //-=-=-=--=-==-=Termination-=-=-=-=-==-=-=--=-=-=-=
     cleanupAll();
