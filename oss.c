@@ -202,8 +202,7 @@ int main(int arg, char* argv[]) {
                     }
 
                     if(pid == 0) {
-                        //exec
-                        sleep(20);
+                        execl("./usrPs", "usrPs", (char*) NULL);
                         exit(23);
                     }
 
