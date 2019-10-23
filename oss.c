@@ -266,13 +266,21 @@ int main(int arg, char* argv[]) {
             
         }
         else {
-            //TODO
+            //push(queue1, queue1Size, )
         }
         
         //DISPATCH
-        int dispatch = 1;
         int response = 0;
         if(numProcesses(activeProcesses) > 1) {
+            int valid = 0;
+            int dispatch;
+            while(valid == 0) {
+                dispatch = rand() % MAX_QUEUABLE_PROCESSES;
+                if(readBit(activeProcesses, dispatch) == 1) {
+                    valid = 1;
+                    dispatch++;
+                }
+            }
             while(response == 0) {
                 sem_wait(shmSemPtr);
                 
@@ -291,10 +299,7 @@ int main(int arg, char* argv[]) {
             }
         }
         
-
-
-
-        sleep(1);
+        //sleep(1);
         fprintf(stderr, "\n");
         free(randomSpawnTime);
         randomSpawnTime = NULL;
