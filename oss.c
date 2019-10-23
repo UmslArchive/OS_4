@@ -11,7 +11,7 @@
 typedef enum { OFF, ON } BitState;
 
 //Constants
-const int MAX_QUEUABLE_PROCESSES = 4;
+const int MAX_QUEUABLE_PROCESSES = 5;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
 #define BIT_VEC_SIZE 3
@@ -162,13 +162,6 @@ int main(int arg, char* argv[]) {
             spawnTimes[spawnTimesSize - 1].nanoseconds = randomSpawnTime->nanoseconds;
             spawnTimes[spawnTimesSize - 1].seconds = randomSpawnTime->seconds;
             
-            //DEBUG
-            fprintf(stderr, "pre-spawnTimes: ");
-            for(i = 0; i < spawnTimesSize; ++i) {
-                fprintf(stderr, "%d:%d ", spawnTimes[i].seconds, spawnTimes[i].nanoseconds);
-            } 
-            fprintf(stderr, "\n");
-            
             //iterate to the corresponding PCB array element
             pcbIterator = shmPCBArrayPtr;
             for(k = 0; k < availableSlot; ++k) {
@@ -177,6 +170,15 @@ int main(int arg, char* argv[]) {
 
             //If a processes time to spawn has come remove from array
             for(i = 0; i < spawnTimesSize; ++i) {
+                fprintf(stderr, "i=%d, size = %ld\n", i,  spawnTimesSize);
+
+                //DEBUG
+                fprintf(stderr, "pre-spawnTimes: ");
+                for(k = 0; k < spawnTimesSize; ++k) {
+                    fprintf(stderr, "%d:%.9d ", spawnTimes[k].seconds, spawnTimes[k].nanoseconds);
+                } 
+                fprintf(stderr, "\n");
+
                 if(shmClockPtr->seconds > spawnTimes[i].seconds || 
                 (shmClockPtr->seconds == spawnTimes[i].seconds &&
                         shmClockPtr->nanoseconds >= spawnTimes[i].nanoseconds)) 
@@ -186,26 +188,25 @@ int main(int arg, char* argv[]) {
                         spawnTimes[j] = spawnTimes[j + 1];
                     }
 
-                    fprintf(stderr, "\n");
+                    //Fork
+
                     spawnTimesSize--;
-                    spawnTimes = realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize));
+                    i = -1;
+                    spawnTimes = (Clock*)realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize));
 
                     //DEBUG
                     fprintf(stderr, "post-spawnTimes: ");
                     for(k = 0; k < spawnTimesSize; ++k) {
-                        fprintf(stderr, "%d:%d ", spawnTimes[k].seconds, spawnTimes[k].nanoseconds);
+                        fprintf(stderr, "%d:%.9d ", spawnTimes[k].seconds, spawnTimes[k].nanoseconds);
                     }
                     fprintf(stderr, "\n"); 
-
-                    setBit(activeProcesses, k, OFF);
 
                     //DEBUG print bitvec
                     fprintf(stderr, "post-bitVec: ");
                     for(k = 0; k < MAX_QUEUABLE_PROCESSES; ++k) {
                         fprintf(stderr, "%d ", readBit(activeProcesses, k));
                     }
-                    fprintf(stderr, "\n");
-                    
+                    fprintf(stderr, "\n");                    
                 }    
             }
         }
