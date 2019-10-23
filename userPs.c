@@ -39,6 +39,7 @@ void run();
 int main(int arg, char* argv[]) {
 
     //-=-==--=-=-==-=-Initialization-==-=-=-=-=-=--==-=-
+    srand(time(NULL));
 
     //Register signal handler
     signal(SIGQUIT, quitSignalHandler);
@@ -79,14 +80,35 @@ int main(int arg, char* argv[]) {
         pcbIterator++;
     }
 
-    //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
-    while(1) {
+    //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--=
+
+    int decider = rand() % 2;
+    int terminate = 0;
+    while(terminate == 0) {
         sem_wait(shmSemPtr);
 
         //Check for message.
         if(shmMsgPtr->simPID == pcbIterator->simPID && shmMsgPtr->state == DISPATCHED) {
-            fprintf(stderr, "Child: simPID=%d\n", pcbIterator->simPID);
+            fprintf(stderr, "Child: simPID=%d ran\n", pcbIterator->simPID);
             shmMsgPtr->state = RAN;
+
+            switch(decider) {
+                case 0:
+                terminate = 1;
+                break;
+
+                case 1:
+                    tickClock(&pcbIterator->cpuTimeUsed, 0, shmMsgPtr->quantum);
+                    terminate = 1;
+                break;
+
+                case 2:
+
+                break;
+
+                case 3:
+                break;
+            }
         }
         sem_post(shmSemPtr);
     }

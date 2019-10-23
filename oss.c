@@ -11,9 +11,9 @@
 typedef enum { OFF, ON } BitState;
 
 //Constants
-const int ALPHA = 1;
-const int BETA = 2;
-const int MAX_QUEUABLE_PROCESSES = 5;
+#define ALPHA 1.0
+#define BETA 2.0
+const int MAX_QUEUABLE_PROCESSES = 18;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
 #define BIT_VEC_SIZE 3
@@ -54,11 +54,6 @@ void cleanupSharedMemory(int* shmid, struct shmid_ds* ctl);
 void cleanupAll();
 void terminate(unsigned char activePsArr[], PCB* pcbArr);
 
-//Process handling
-int spawnProcess(Clock* mainClock, Clock* sTimes, size_t* sTimesSize, PCB* pcbArr);
-void scheduleProcess();
-void dispatchProcess();
-
 //Utility
 void writeLog();                                                 
 void printSharedMemory(int shmid, void* shmObj);
@@ -69,6 +64,7 @@ int scanForEmptySlot(unsigned char activePsArr[]);
 int numProcesses(unsigned char activePsArr[]);
 void push(unsigned int queue[], size_t* size, unsigned int val);
 unsigned int pop(unsigned int queue[], size_t* size);
+unsigned int peek(unsigned int queue[], size_t size);
 void printQueue(unsigned int queue[], size_t size, int qNum);
 
 //========================================================
@@ -121,9 +117,9 @@ int main(int arg, char* argv[]) {
     //Queues
     Clock* spawnTimes = NULL;
     size_t spawnTimesSize = 0;
-    unsigned int queue1[10];
-    unsigned int queue2[10];
-    unsigned int queue3[10];
+    unsigned int queue1[18];
+    unsigned int queue2[18];
+    unsigned int queue3[18];
     size_t queue1Size = 0;
     size_t queue2Size = 0;
     size_t queue3Size = 0;
@@ -216,6 +212,10 @@ int main(int arg, char* argv[]) {
                         subtractTimes(&pcbIterator->totalTimeAlive, &spawnTimes[i], shmClockPtr);
                         printSharedMemory(shmPCBArrayID, pcbIterator);
 
+                        //Initial schedule
+                        pcbIterator->priority = 1;
+                        push(queue1, &queue1Size, availableSlot + 1);
+
                         //Iterate pcb if still empty slot (handles double gen in single tick)
                         pcbIterator = shmPCBArrayPtr;
                         if(availableSlot < MAX_QUEUABLE_PROCESSES - 1) {
@@ -261,19 +261,62 @@ int main(int arg, char* argv[]) {
             //terminate(activeProcesses, shmPCBArrayPtr);
         }
 
-        //SCHEDULE PROCESS
+        //RESCHEDULE ALL PROCESSES
+        Clock totalWaitTime;
+        Clock avgWaitTime;
+        initClock(&avgWaitTime);
+        initClock(&totalWaitTime);
+        pcbIterator = shmPCBArrayPtr;
         if(numProcesses(activeProcesses) > 1) {
-            
+            //Calculate avg wait time of each process
+            for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+                pcbIterator++;
+                if(readBit(activeProcesses, i) == ON) {
+                    //calc
+                    tickClock(&totalWaitTime, pcbIterator->totalTimeAlive.seconds - pcbIterator->cpuTimeUsed.seconds, pcbIterator->totalTimeAlive.nanoseconds - pcbIterator->cpuTimeUsed.nanoseconds);
+                }
+            }
+
+            //average
+            avgWaitTime.seconds = totalWaitTime.seconds / numProcesses(activeProcesses);
+            avgWaitTime.nanoseconds = 0; //yes I know I'm losing precision.
+
+            //requeue
+            pcbIterator = shmPCBArrayPtr;
+            size_t tempSize;
+            int spot = -1;
+            for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+                pcbIterator++;
+                if(readBit(activeProcesses, i) == ON) {
+                    if(pcbIterator->priority == 1 && ALPHA * avgWaitTime.seconds < pcbIterator->totalTimeAlive.seconds - pcbIterator->cpuTimeUsed.seconds) {
+                        //Move process to lower queue.
+                        pcbIterator->priority++;
+                        push(queue2, &queue2Size, pcbIterator->simPID);
+                        for(k = 0; k < queue1Size; ++k) {
+                            if(queue1[k] == pcbIterator->simPID)
+                                break;
+                        }
+                        tempSize = queue1Size - k;
+                        pop(*(&queue1 + k), &tempSize);
+                    }
+                    else if (pcbIterator->priority == 2 && BETA * avgWaitTime.seconds < pcbIterator->totalTimeAlive.seconds - pcbIterator->cpuTimeUsed.seconds) {
+                        //Move to lowest tier
+                        pcbIterator->priority++;
+                        push(queue3, &queue3Size, pcbIterator->simPID);
+                    }
+                }
+            }
         }
-        else {
-            //push(queue1, queue1Size, )
-        }
+
+        printQueue(queue1, queue1Size, 1);
+        printQueue(queue2, queue2Size, 2);
+        printQueue(queue3, queue3Size, 3);
         
         //DISPATCH
         int response = 0;
         if(numProcesses(activeProcesses) > 1) {
             int valid = 0;
-            int dispatch;
+            unsigned int dispatch = peek(queue1, queue1Size);
             while(valid == 0) {
                 dispatch = rand() % MAX_QUEUABLE_PROCESSES;
                 if(readBit(activeProcesses, dispatch) == 1) {
@@ -299,7 +342,7 @@ int main(int arg, char* argv[]) {
             }
         }
         
-        //sleep(1);
+        sleep(1);
         fprintf(stderr, "\n");
         free(randomSpawnTime);
         randomSpawnTime = NULL;
@@ -322,6 +365,7 @@ void printQueue(unsigned int queue[], size_t size, int qNum) {
         return;
     }
     int i;
+    printf("Queue#%d: ", qNum);
     for(i = 0; i < size; ++i) {
         printf("%d ", queue[i]);
     }
