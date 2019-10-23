@@ -84,12 +84,10 @@ int main(int arg, char* argv[]) {
         sem_wait(shmSemPtr);
 
         //Check for message.
-        if(shmMsgPtr->simPID == pcbIterator->simPID) {
+        if(shmMsgPtr->simPID == pcbIterator->simPID && shmMsgPtr->state == DISPATCHED) {
             fprintf(stderr, "Child: simPID=%d\n", pcbIterator->simPID);
+            shmMsgPtr->state = RAN;
         }
-
-        resetMSG(shmMsgPtr);
-
         sem_post(shmSemPtr);
     }
     

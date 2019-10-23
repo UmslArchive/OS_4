@@ -137,7 +137,7 @@ int main(int arg, char* argv[]) {
     }
     pcbIterator = NULL;
     resetMSG(shmMsgPtr);
-    shmMsgPtr->ran = 0;
+    shmMsgPtr->state = READY;
 
     //Init bit vector
     memset(activeProcesses, 0, sizeof(int) * 3);
@@ -269,27 +269,22 @@ int main(int arg, char* argv[]) {
             //TODO
         }
         
+        //DISPATCH
+        int dispatch = 1;
+        int response = 0;
         if(numProcesses(activeProcesses) > 1) {
-            int response = 0;
             while(response == 0) {
                 sem_wait(shmSemPtr);
-                int dispatched = 1;
-                //DISPATCH PROCESS
-                if(shmMsgPtr->ran = 0) {
-                    shmMsgPtr->quantum = 10;
-                    shmMsgPtr->simPID = dispatched;
-                    printf("dispatched\n");
-                }
                 
-                sleep(1);
-    
-                printf("entered\n");
-                //Wait for response
-                if(shmMsgPtr->ran == 1) {
+                if(shmMsgPtr->state == READY) {
+                    //Dispatch
+                    shmMsgPtr->state = DISPATCHED;
+                    shmMsgPtr->simPID = dispatch;
+                }
+
+                if(shmMsgPtr->state == RAN) {
+                    shmMsgPtr->state = READY;
                     response = 1;
-                    //Recalculate PCB.....
-                    shmMsgPtr->ran = 0;
-                    printf("ran\n");
                 }
 
                 sem_post(shmSemPtr);

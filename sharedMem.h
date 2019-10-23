@@ -28,6 +28,8 @@
 
 //----------------------------------------
 
+typedef enum { RAN, READY, DISPATCHED } ProcessState;
+
 //Structs
 typedef struct {
     unsigned int seconds;
@@ -46,7 +48,7 @@ typedef struct {
 typedef struct {
     unsigned int simPID;
     unsigned int quantum;
-    int ran;
+    ProcessState state;
 } MSG;
 
 //Struct utility function prototypes
