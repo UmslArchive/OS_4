@@ -11,7 +11,7 @@
 typedef enum { OFF, ON } BitState;
 
 //Constants
-const int MAX_QUEUABLE_PROCESSES = 3;
+const int MAX_QUEUABLE_PROCESSES = 4;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
 #define BIT_VEC_SIZE 3
@@ -136,14 +136,7 @@ int main(int arg, char* argv[]) {
 
     while(1) {
         tickClock(shmClockPtr, 1, rand() % 100000000);
-        fprintf(stderr, "CLOCK = %d:%d\n", shmClockPtr->seconds, shmClockPtr->nanoseconds);
-
-        //DEBUG print bitvec
-        fprintf(stderr, "bitVec: ");
-        for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
-            fprintf(stderr, "%d ", readBit(activeProcesses, i));
-        }
-        fprintf(stderr, "\n");
+        fprintf(stderr, "CLOCK = %d:%.9d\n", shmClockPtr->seconds, shmClockPtr->nanoseconds);
 
         //Generate random spawn time
         Clock* randomSpawnTime = malloc(sizeof(Clock));
@@ -152,18 +145,25 @@ int main(int arg, char* argv[]) {
 
         //Scan for available process slot
         int availableSlot = scanForEmptySlot(activeProcesses);
-        printf("bitvecSlot=%d\n", availableSlot);
         if(availableSlot != -1) {
             setBit(activeProcesses, availableSlot, ON);
+            printf("bitvecSlot=%d\n", availableSlot);
 
-            //Stick the randomly generated time into the prequeue
+            //DEBUG print bitvec
+            fprintf(stderr, "pre-bitVec: ");
+            for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+                fprintf(stderr, "%d ", readBit(activeProcesses, i));
+            }
+            fprintf(stderr, "\n");
+
+            //Stick the randomly generated time into the spawn time array
             spawnTimes = (Clock*)realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize + 1));
             ++spawnTimesSize;
             spawnTimes[spawnTimesSize - 1].nanoseconds = randomSpawnTime->nanoseconds;
             spawnTimes[spawnTimesSize - 1].seconds = randomSpawnTime->seconds;
             
             //DEBUG
-            fprintf(stderr, "spawnTimes: ");
+            fprintf(stderr, "pre-spawnTimes: ");
             for(i = 0; i < spawnTimesSize; ++i) {
                 fprintf(stderr, "%d:%d ", spawnTimes[i].seconds, spawnTimes[i].nanoseconds);
             } 
@@ -175,23 +175,38 @@ int main(int arg, char* argv[]) {
                 ++pcbIterator;
             }
 
-            //If a processes time to spawn has come...
+            //If a processes time to spawn has come remove from array
             for(i = 0; i < spawnTimesSize; ++i) {
                 if(shmClockPtr->seconds > spawnTimes[i].seconds || 
                 (shmClockPtr->seconds == spawnTimes[i].seconds &&
                         shmClockPtr->nanoseconds >= spawnTimes[i].nanoseconds)) 
                 {
                     fprintf(stderr, "true\n");
-                    //Remove from spawnTimes
                     for(j = i; j < spawnTimesSize - 1; ++j) {
-                        spawnTimes[i] = spawnTimes[i + 1];
+                        spawnTimes[j] = spawnTimes[j + 1];
                     }
-                    spawnTimesSize--;
-                    spawnTimes = (Clock*)realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize));
 
-                    //"run"
-                    setBit(activeProcesses, availableSlot, OFF);
-                }
+                    fprintf(stderr, "\n");
+                    spawnTimesSize--;
+                    spawnTimes = realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize));
+
+                    //DEBUG
+                    fprintf(stderr, "post-spawnTimes: ");
+                    for(k = 0; k < spawnTimesSize; ++k) {
+                        fprintf(stderr, "%d:%d ", spawnTimes[k].seconds, spawnTimes[k].nanoseconds);
+                    }
+                    fprintf(stderr, "\n"); 
+
+                    setBit(activeProcesses, k, OFF);
+
+                    //DEBUG print bitvec
+                    fprintf(stderr, "post-bitVec: ");
+                    for(k = 0; k < MAX_QUEUABLE_PROCESSES; ++k) {
+                        fprintf(stderr, "%d ", readBit(activeProcesses, k));
+                    }
+                    fprintf(stderr, "\n");
+                    
+                }    
             }
         }
         else {
