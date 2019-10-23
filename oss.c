@@ -149,11 +149,11 @@ int main(int arg, char* argv[]) {
             printf("bitvecSlot=%d\n", availableSlot);
 
             //DEBUG print bitvec
-            fprintf(stderr, "pre-bitVec: ");
+            /* fprintf(stderr, "pre-bitVec: ");
             for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
                 fprintf(stderr, "%d ", readBit(activeProcesses, i));
             }
-            fprintf(stderr, "\n");
+            fprintf(stderr, "\n"); */
 
             //Stick the randomly generated time into the spawn time array
             spawnTimes = (Clock*)realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize + 1));
@@ -171,18 +171,19 @@ int main(int arg, char* argv[]) {
             for(i = 0; i < spawnTimesSize; ++i) {
                 //fprintf(stderr, "i=%d, size = %ld\n", i,  spawnTimesSize);
 
-                //DEBUG
+                /* //DEBUG
                 fprintf(stderr, "pre-spawnTimes: ");
                 for(k = 0; k < spawnTimesSize; ++k) {
                     fprintf(stderr, "%d:%.9d ", spawnTimes[k].seconds, spawnTimes[k].nanoseconds);
                 } 
-                fprintf(stderr, "\n");
+                fprintf(stderr, "\n"); */
 
+                //If its time to generate
                 if(shmClockPtr->seconds > spawnTimes[i].seconds || 
                 (shmClockPtr->seconds == spawnTimes[i].seconds &&
                         shmClockPtr->nanoseconds >= spawnTimes[i].nanoseconds)) 
                 {
-                    fprintf(stderr, "true\n");
+                    fprintf(stderr, "\nGenerating process....\n");
                     for(j = i; j < spawnTimesSize - 1; ++j) {
                         spawnTimes[j] = spawnTimes[j + 1];
                     }
@@ -204,11 +205,14 @@ int main(int arg, char* argv[]) {
 
                         //Iterate pcb if still empty slot (handles double gen in single tick)
                         pcbIterator = shmPCBArrayPtr;
-                        availableSlot = scanForEmptySlot(activeProcesses);
-                        if(availableSlot != -1) {
-                            for(l = 0; l < availableSlot; ++l) {
-                                pcbIterator++;
+                        if(availableSlot < MAX_QUEUABLE_PROCESSES - 1) {
+                            availableSlot = scanForEmptySlot(activeProcesses);
+                            if(availableSlot != -1) {
+                                for(l = 0; l < availableSlot; ++l) {
+                                    pcbIterator++;
+                                }
                             }
+
                         }
                     }
                     
@@ -223,15 +227,15 @@ int main(int arg, char* argv[]) {
                     i = -1;
                     spawnTimes = (Clock*)realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize));
 
-                    //DEBUG
+                    /* //DEBUG
                     fprintf(stderr, "post-spawnTimes: ");
                     for(k = 0; k < spawnTimesSize; ++k) {
                         fprintf(stderr, "%d:%.9d ", spawnTimes[k].seconds, spawnTimes[k].nanoseconds);
                     }
-                    fprintf(stderr, "\n"); 
+                    fprintf(stderr, "\n");  */
 
                     //DEBUG print bitvec
-                    fprintf(stderr, "post-bitVec: ");
+                    fprintf(stderr, "bitVec status: ");
                     for(k = 0; k < MAX_QUEUABLE_PROCESSES; ++k) {
                         fprintf(stderr, "%d ", readBit(activeProcesses, k));
                     }

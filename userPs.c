@@ -80,8 +80,17 @@ int main(int arg, char* argv[]) {
     }
 
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
+    while(1) {
+        sem_wait(shmSemPtr);
 
-    fprintf(stderr, "Child: simPID=%d\n", pcbIterator->simPID);
+        //Check for message.
+        if(shmMsgPtr->simPID == pcbIterator->simPID) {
+            fprintf(stderr, "Child: simPID=%d\n", pcbIterator->simPID);
+        }
+
+        sem_close(shmSemPtr);
+    }
+    
 
     //-=-=-==-=-=-=-Finalization/Termination--==--==-=--==-
 
