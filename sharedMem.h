@@ -46,6 +46,7 @@ typedef struct {
 typedef struct {
     unsigned int simPID;
     unsigned int quantum;
+    int ran;
 } MSG;
 
 //Struct utility function prototypes

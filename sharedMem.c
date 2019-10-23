@@ -44,6 +44,7 @@ void initPCB(PCB* pcb, unsigned int sPID, unsigned int prio){
 void resetMSG(MSG* msg) {
     msg->simPID = 0;
     msg->quantum = 0;
+    msg->ran = 1;
 }
 
 void setMSG(MSG* msg, unsigned int sPID, unsigned int quant){

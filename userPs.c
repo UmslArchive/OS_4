@@ -88,7 +88,9 @@ int main(int arg, char* argv[]) {
             fprintf(stderr, "Child: simPID=%d\n", pcbIterator->simPID);
         }
 
-        sem_close(shmSemPtr);
+        resetMSG(shmMsgPtr);
+
+        sem_post(shmSemPtr);
     }
     
 

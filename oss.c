@@ -11,6 +11,8 @@
 typedef enum { OFF, ON } BitState;
 
 //Constants
+const int ALPHA = 1;
+const int BETA = 2;
 const int MAX_QUEUABLE_PROCESSES = 5;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
@@ -135,27 +137,15 @@ int main(int arg, char* argv[]) {
     }
     pcbIterator = NULL;
     resetMSG(shmMsgPtr);
+    shmMsgPtr->ran = 0;
 
     //Init bit vector
     memset(activeProcesses, 0, sizeof(int) * 3);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-    push(queue1, &queue1Size, 25);
-    push(queue1, &queue1Size, 30);
-    printQueue(queue1, queue1Size, 1);
-    pop(queue1, &queue1Size);
-    printQueue(queue1, queue1Size, 1);
-    pop(queue1, &queue1Size);
-    printQueue(queue1, queue1Size, 1);
-    pop(queue1, &queue1Size);
-    printQueue(queue1, queue1Size, 1);
 
-    for(i = 0; i < 13; ++i) {
-        push(queue1, &queue1Size, i);
-        printQueue(queue1, queue1Size, 1);
-    }
-
-    while(0) {
+    while(1) {
+        //Time moves forward
         tickClock(shmClockPtr, 1, rand() % 100000000);
         fprintf(stderr, "CLOCK = %d:%.9d\n", shmClockPtr->seconds, shmClockPtr->nanoseconds);
 
@@ -221,6 +211,8 @@ int main(int arg, char* argv[]) {
                         //Set the PCB
                         setBit(activeProcesses, availableSlot, ON);
                         pcbIterator->actualPID = pid;
+                        pcbIterator->cpuTimeUsed.seconds = 0;
+                        pcbIterator->cpuTimeUsed.nanoseconds = 0;
                         subtractTimes(&pcbIterator->totalTimeAlive, &spawnTimes[i], shmClockPtr);
                         printSharedMemory(shmPCBArrayID, pcbIterator);
 
@@ -242,15 +234,6 @@ int main(int arg, char* argv[]) {
                     if(pid == 0) {
                         execl("./usrPs", "usrPs", convertString,  (char*) NULL);
                     }
-
-                    //Schedule process
-                    if(numProcesses(activeProcesses) > 1) {
-
-                    }
-                    else {
-                        //TODO
-                    }
-
                     
                     //shrink spawn time array
                     spawnTimesSize--;
@@ -276,6 +259,41 @@ int main(int arg, char* argv[]) {
         else {
             fprintf(stderr, "\n");
             //terminate(activeProcesses, shmPCBArrayPtr);
+        }
+
+        //SCHEDULE PROCESS
+        if(numProcesses(activeProcesses) > 1) {
+            
+        }
+        else {
+            //TODO
+        }
+        
+        if(numProcesses(activeProcesses) > 1) {
+            int response = 0;
+            while(response == 0) {
+                sem_wait(shmSemPtr);
+                int dispatched = 1;
+                //DISPATCH PROCESS
+                if(shmMsgPtr->ran = 0) {
+                    shmMsgPtr->quantum = 10;
+                    shmMsgPtr->simPID = dispatched;
+                    printf("dispatched\n");
+                }
+                
+                sleep(1);
+    
+                printf("entered\n");
+                //Wait for response
+                if(shmMsgPtr->ran == 1) {
+                    response = 1;
+                    //Recalculate PCB.....
+                    shmMsgPtr->ran = 0;
+                    printf("ran\n");
+                }
+
+                sem_post(shmSemPtr);
+            }
         }
         
 
