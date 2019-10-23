@@ -73,13 +73,24 @@ int main(int arg, char* argv[]) {
         (PCB*)attachSharedMemory
             (&shmPCBArrayKey, &shmPCBArraySize, &shmPCBArrayID);
 
+    //Set the iterator
+    PCB* pcbIterator = shmPCBArrayPtr;
+    for(i = 0; i < atoi(argv[1]) - 1; ++i) {
+        pcbIterator++;
+    }
+
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
-    
-    fprintf(stderr, "HI\n");
+
+    fprintf(stderr, "Child: simPID=%d\n", pcbIterator->simPID);
+
     //-=-=-==-=-=-=-Finalization/Termination--==--==-=--==-
 
     return 100;
 }
+
+//=================================================================
+//-----------------------Function Defs----------------------------------
+//=================================================================
 
 sem_t* attachShmSemaphore(key_t* key, size_t* size, int* shmid) {
     //Retrieve shmid

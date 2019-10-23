@@ -80,7 +80,7 @@ int main(int arg, char* argv[]) {
     signal(SIGABRT, abortSignalHandler);
 
     //Utility variables
-    int i, j, k;
+    int i, j, k, l;
     char convertString[255];
     int exitStatus;
     PCB* pcbIterator = NULL;
@@ -169,7 +169,7 @@ int main(int arg, char* argv[]) {
 
             //If a processes time to spawn has come remove from array
             for(i = 0; i < spawnTimesSize; ++i) {
-                fprintf(stderr, "i=%d, size = %ld\n", i,  spawnTimesSize);
+                //fprintf(stderr, "i=%d, size = %ld\n", i,  spawnTimesSize);
 
                 //DEBUG
                 fprintf(stderr, "pre-spawnTimes: ");
@@ -194,20 +194,31 @@ int main(int arg, char* argv[]) {
                         terminate(activeProcesses, shmPCBArrayPtr);
                     }
                     
+                    //Parent
                     if(pid > 0) {
+                        //Set the PCB
                         setBit(activeProcesses, availableSlot, ON);
                         pcbIterator->actualPID = pid;
                         subtractTimes(&pcbIterator->totalTimeAlive, &spawnTimes[i], shmClockPtr);
                         printSharedMemory(shmPCBArrayID, pcbIterator);
-                    }
 
+                        //Iterate pcb if still empty slot (handles double gen in single tick)
+                        pcbIterator = shmPCBArrayPtr;
+                        availableSlot = scanForEmptySlot(activeProcesses);
+                        if(availableSlot != -1) {
+                            for(l = 0; l < availableSlot; ++l) {
+                                pcbIterator++;
+                            }
+                        }
+                    }
+                    
+                    //Child
+                    sprintf(convertString, "%d", pcbIterator->simPID);
                     if(pid == 0) {
-                        execl("./usrPs", "usrPs", (char*) NULL);
-                        exit(23);
+                        execl("./usrPs", "usrPs", convertString,  (char*) NULL);
                     }
-
-
-
+                    
+                    //shrink spawn time array
                     spawnTimesSize--;
                     i = -1;
                     spawnTimes = (Clock*)realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize));
@@ -252,71 +263,6 @@ int main(int arg, char* argv[]) {
 }
 
 //===================FUNCTION=DEFINITIONS============================
-
-int spawnProcess(Clock* mainClock, Clock* sTimes, size_t* sTimesSize, PCB* pcbArr) {
-    int i, j;
-    PCB* iterator = pcbArr;
-
-    //Generate random spawn time
-    Clock* randomSpawnTime = malloc(sizeof(Clock));
-    initClock(randomSpawnTime);
-    tickClock(randomSpawnTime, mainClock->seconds, mainClock->nanoseconds + rand() % 3000000000);
-    //fprintf(stderr, "%d:%d\n", randomSpawnTime->seconds, randomSpawnTime->nanoseconds);
-    free(randomSpawnTime);
-
-    int stillMore = 1;
-    while(stillMore == 1) {
-        //Check for available slots
-        int processSlot = scanForEmptySlot(activeProcesses);
-        if(processSlot < 0) {
-            return -1;
-        }
-
-        //Stick the randomly generated time into the prequeue
-        sTimes = realloc(sTimes, *sTimesSize + 1);
-        ++*sTimesSize;
-        sTimes[*sTimesSize - 1].nanoseconds = randomSpawnTime->nanoseconds;
-        sTimes[*sTimesSize - 1].seconds = randomSpawnTime->seconds;
-
-        randomSpawnTime = NULL;
-
-
-        //Scan for processes in spawnTimeQueue who need to be forked
-
-        printf("here\n");
-        for(i = 0; i < *sTimesSize; ++i) {
-            //If a processes time to spawn has come...
-            if(mainClock->seconds > sTimes[i].seconds || 
-                (mainClock->seconds >= sTimes[i].seconds &&
-                        mainClock->nanoseconds >= sTimes[i].nanoseconds)) 
-            {
-                //Remove from spawnTimes
-                for(j = i; j < *sTimesSize - 1; ++j) {
-                    sTimes[i] = sTimes[i + 1];
-                }
-                *sTimesSize--;
-
-                //Iterate to the corresponding PCB
-                iterator = selectPCB(pcbArr, i + 1);
-                //fork
-                pid_t pid = fork();
-                if(pid == 0) {
-                    execl("./usrPs", "usrPs", (char*) NULL);
-                    exit(55);
-                }
-                if(pid > 0) {
-                    iterator->actualPID = pid;
-                }
-            }
-            else {
-                stillMore = 0;
-            }
-        }
-    }
-   
-
-    return 0;
-}
 
 int scanForEmptySlot(unsigned char activePsArr[]) {
     int i;
