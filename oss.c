@@ -146,7 +146,6 @@ int main(int arg, char* argv[]) {
         //Scan for available process slot
         int availableSlot = scanForEmptySlot(activeProcesses);
         if(availableSlot != -1) {
-            setBit(activeProcesses, availableSlot, ON);
             printf("bitvecSlot=%d\n", availableSlot);
 
             //DEBUG print bitvec
@@ -188,7 +187,27 @@ int main(int arg, char* argv[]) {
                         spawnTimes[j] = spawnTimes[j + 1];
                     }
 
-                    //Fork
+                    //Generate                    
+                    pid = fork();
+                    if(pid < 0) {
+                        perror("ERROR:oss:failed to fork");
+                        terminate(activeProcesses, shmPCBArrayPtr);
+                    }
+                    
+                    if(pid > 0) {
+                        setBit(activeProcesses, availableSlot, ON);
+                        pcbIterator->actualPID = pid;
+                        subtractTimes(&pcbIterator->totalTimeAlive, &spawnTimes[i], shmClockPtr);
+                        printSharedMemory(shmPCBArrayID, pcbIterator);
+                    }
+
+                    if(pid == 0) {
+                        //exec
+                        sleep(20);
+                        exit(23);
+                    }
+
+
 
                     spawnTimesSize--;
                     i = -1;
@@ -304,7 +323,6 @@ int scanForEmptySlot(unsigned char activePsArr[]) {
     int i;
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
         if(readBit(activePsArr, i) == OFF) {
-            setBit(activePsArr, i, ON);
             return i;
         }
     }
@@ -455,8 +473,8 @@ void printSharedMemory(int shmid, void* shmPtr) {
     //Print PCB array
     if(shmid == shmPCBArrayID) {
         tempPCB = (PCB*)shmPtr;
-        for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
-            fprintf(stderr, "PCB#%d:\n  ", i + 1);
+        //for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+            //fprintf(stderr, "PCB#%d:\n  ", i + 1);
             fprintf(stderr, "simPID=%u\n  ", tempPCB->simPID);
             fprintf(stderr, "prio=%u\n  ", tempPCB->priority);
 
@@ -472,8 +490,8 @@ void printSharedMemory(int shmid, void* shmPtr) {
             tempNano = tempPCB->prevBurst.nanoseconds;
             fprintf(stderr, "pBurst=%u:%u\n\n", tempSec, tempNano);
         
-            ++tempPCB;
-        }
+           // ++tempPCB;
+        //}
     }
 }
 

@@ -50,3 +50,19 @@ void setMSG(MSG* msg, unsigned int sPID, unsigned int quant){
     msg->simPID = sPID;
     msg->quantum = quant;
 }
+
+void subtractTimes(Clock* newTime, Clock* t1, Clock* t2) {
+    *newTime = *t1;
+    int nanoDiff = t1->nanoseconds - t2->nanoseconds;
+
+    //Carry
+    if(nanoDiff < 0) {
+        newTime->seconds--;
+        newTime->nanoseconds = 1000000000 + nanoDiff;
+    }
+    else {
+        newTime->nanoseconds = nanoDiff;
+    }
+
+    newTime->seconds = t1->seconds - t2->seconds;
+}
