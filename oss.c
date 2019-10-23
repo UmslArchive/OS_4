@@ -11,7 +11,7 @@
 typedef enum { OFF, ON } BitState;
 
 //Constants
-const int MAX_QUEUABLE_PROCESSES = 18;
+const int MAX_QUEUABLE_PROCESSES = 3;
 const int MAX_LOG_LINES = 10000;
 const int SHM_CREATE_FLAGS = IPC_CREAT | IPC_EXCL | 0777;
 #define BIT_VEC_SIZE 3
@@ -39,6 +39,7 @@ unsigned char activeProcesses[BIT_VEC_SIZE];
 //====================SIGNAL HANDLERS====================
 
 void interruptSignalHandler(int sig);
+void abortSignalHandler(int sig);
 
 //=================FUNCTION=PROTOTYPES===================
 
@@ -52,7 +53,7 @@ void cleanupAll();
 void terminate(unsigned char activePsArr[], PCB* pcbArr);
 
 //Process handling
-void spawnProcess();
+int spawnProcess(Clock* mainClock, Clock* sTimes, size_t* sTimesSize, PCB* pcbArr);
 void scheduleProcess();
 void dispatchProcess();
 
@@ -62,6 +63,7 @@ void printSharedMemory(int shmid, void* shmObj);
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID);
 void setBit(unsigned char arr[], int position, BitState setting);
 int readBit(unsigned char arr[], int position);
+int scanForEmptySlot(unsigned char activePsArr[]);
 
 //========================================================
 //---------------------MAIN-------------------------------
@@ -71,15 +73,18 @@ int main(int arg, char* argv[]) {
 
     //-=-=-=-=-=Initialization-=-=-=--=--=-=-=--=-
 
+    srand(time(NULL));
+
     //Register signal handlers
     signal(SIGINT, interruptSignalHandler);
+    signal(SIGABRT, abortSignalHandler);
 
     //Utility variables
     int i, j, k;
     char convertString[255];
     int exitStatus;
-    pid_t pid = 0;
     PCB* pcbIterator = NULL;
+    pid_t pid;
 
     //Shared mem keys
     key_t shmSemKey = SHM_KEY_SEM;
@@ -108,6 +113,8 @@ int main(int arg, char* argv[]) {
             (&shmPCBArrayKey, &shmPCBArraySize, &shmPCBArrayID);
 
     //Queues
+    Clock* spawnTimes = NULL;
+    size_t spawnTimesSize = 0;
     unsigned int* queue1 = NULL;
     unsigned int* queue2 = NULL;
     unsigned int* queue3 = NULL;
@@ -127,12 +134,82 @@ int main(int arg, char* argv[]) {
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    pid = fork();
-    if(pid == 0) {
-        execl("./usrPs", "usrPs", (char*)NULL);
+    while(1) {
+        tickClock(shmClockPtr, 1, rand() % 100000000);
+        fprintf(stderr, "CLOCK = %d:%d\n", shmClockPtr->seconds, shmClockPtr->nanoseconds);
+
+        //DEBUG print bitvec
+        fprintf(stderr, "bitVec: ");
+        for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+            fprintf(stderr, "%d ", readBit(activeProcesses, i));
+        }
+        fprintf(stderr, "\n");
+
+        //Generate random spawn time
+        Clock* randomSpawnTime = malloc(sizeof(Clock));
+        initClock(randomSpawnTime);
+        tickClock(randomSpawnTime, shmClockPtr->seconds, shmClockPtr->nanoseconds + rand() % 3000000000);
+
+        //Scan for available process slot
+        int availableSlot = scanForEmptySlot(activeProcesses);
+        printf("bitvecSlot=%d\n", availableSlot);
+        if(availableSlot != -1) {
+            setBit(activeProcesses, availableSlot, ON);
+
+            //Stick the randomly generated time into the prequeue
+            spawnTimes = (Clock*)realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize + 1));
+            ++spawnTimesSize;
+            spawnTimes[spawnTimesSize - 1].nanoseconds = randomSpawnTime->nanoseconds;
+            spawnTimes[spawnTimesSize - 1].seconds = randomSpawnTime->seconds;
+            
+            //DEBUG
+            fprintf(stderr, "spawnTimes: ");
+            for(i = 0; i < spawnTimesSize; ++i) {
+                fprintf(stderr, "%d:%d ", spawnTimes[i].seconds, spawnTimes[i].nanoseconds);
+            } 
+            fprintf(stderr, "\n");
+            
+            //iterate to the corresponding PCB array element
+            pcbIterator = shmPCBArrayPtr;
+            for(k = 0; k < availableSlot; ++k) {
+                ++pcbIterator;
+            }
+
+            //If a processes time to spawn has come...
+            for(i = 0; i < spawnTimesSize; ++i) {
+                if(shmClockPtr->seconds > spawnTimes[i].seconds || 
+                (shmClockPtr->seconds == spawnTimes[i].seconds &&
+                        shmClockPtr->nanoseconds >= spawnTimes[i].nanoseconds)) 
+                {
+                    fprintf(stderr, "true\n");
+                    //Remove from spawnTimes
+                    for(j = i; j < spawnTimesSize - 1; ++j) {
+                        spawnTimes[i] = spawnTimes[i + 1];
+                    }
+                    spawnTimesSize--;
+                    spawnTimes = (Clock*)realloc(spawnTimes, sizeof(Clock) * (spawnTimesSize));
+
+                    //"run"
+                    setBit(activeProcesses, availableSlot, OFF);
+                }
+            }
+        }
+        else {
+            fprintf(stderr, "\n");
+            //terminate(activeProcesses, shmPCBArrayPtr);
+        }
+        
+
+
+
+        sleep(1);
+        fprintf(stderr, "\n");
+        free(randomSpawnTime);
+        randomSpawnTime = NULL;
+
     }
 
-    sleep(5);
+    wait(NULL);
     
     //-=-=-=--=-==-=Termination-=-=-=-=-==-=-=--=-=-=-=
     cleanupAll();
@@ -141,6 +218,83 @@ int main(int arg, char* argv[]) {
 }
 
 //===================FUNCTION=DEFINITIONS============================
+
+int spawnProcess(Clock* mainClock, Clock* sTimes, size_t* sTimesSize, PCB* pcbArr) {
+    int i, j;
+    PCB* iterator = pcbArr;
+
+    //Generate random spawn time
+    Clock* randomSpawnTime = malloc(sizeof(Clock));
+    initClock(randomSpawnTime);
+    tickClock(randomSpawnTime, mainClock->seconds, mainClock->nanoseconds + rand() % 3000000000);
+    //fprintf(stderr, "%d:%d\n", randomSpawnTime->seconds, randomSpawnTime->nanoseconds);
+    free(randomSpawnTime);
+
+    int stillMore = 1;
+    while(stillMore == 1) {
+        //Check for available slots
+        int processSlot = scanForEmptySlot(activeProcesses);
+        if(processSlot < 0) {
+            return -1;
+        }
+
+        //Stick the randomly generated time into the prequeue
+        sTimes = realloc(sTimes, *sTimesSize + 1);
+        ++*sTimesSize;
+        sTimes[*sTimesSize - 1].nanoseconds = randomSpawnTime->nanoseconds;
+        sTimes[*sTimesSize - 1].seconds = randomSpawnTime->seconds;
+
+        randomSpawnTime = NULL;
+
+
+        //Scan for processes in spawnTimeQueue who need to be forked
+
+        printf("here\n");
+        for(i = 0; i < *sTimesSize; ++i) {
+            //If a processes time to spawn has come...
+            if(mainClock->seconds > sTimes[i].seconds || 
+                (mainClock->seconds >= sTimes[i].seconds &&
+                        mainClock->nanoseconds >= sTimes[i].nanoseconds)) 
+            {
+                //Remove from spawnTimes
+                for(j = i; j < *sTimesSize - 1; ++j) {
+                    sTimes[i] = sTimes[i + 1];
+                }
+                *sTimesSize--;
+
+                //Iterate to the corresponding PCB
+                iterator = selectPCB(pcbArr, i + 1);
+                //fork
+                pid_t pid = fork();
+                if(pid == 0) {
+                    execl("./usrPs", "usrPs", (char*) NULL);
+                    exit(55);
+                }
+                if(pid > 0) {
+                    iterator->actualPID = pid;
+                }
+            }
+            else {
+                stillMore = 0;
+            }
+        }
+    }
+   
+
+    return 0;
+}
+
+int scanForEmptySlot(unsigned char activePsArr[]) {
+    int i;
+    for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+        if(readBit(activePsArr, i) == OFF) {
+            setBit(activePsArr, i, ON);
+            return i;
+        }
+    }
+
+    return -1;
+}
 
 sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid) {
     //Allocate shared memory and get an id
@@ -248,7 +402,7 @@ void terminate(unsigned char activePsArr[], PCB* pcbArr) {
     //Send Kill signals to every child process in the system for detachment
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
         if(readBit(activePsArr, i) == ON) {
-            kill(iter->actualPID + 1, SIGQUIT);
+            //kill(iter->actualPID, SIGQUIT);
         }
         ++iter;
     }
@@ -308,7 +462,7 @@ void printSharedMemory(int shmid, void* shmPtr) {
 }
 
 //The index of the bit vector has a 1 to 1 correspondence to the simulated pid.
-//This function allows selection ofspecific PCBs from the array by ptr return.
+//This function allows selection of specific PCBs from the array by ptr return.
 PCB* selectPCB(PCB* pcbArr, unsigned int sPID) {
     int i;
 
@@ -373,5 +527,10 @@ int readBit(unsigned char arr[], int position) {
 
 void interruptSignalHandler(int sig) {
     fprintf(stderr, "\nOSS caught Ctrl-C interrupt.\nCleaning up...\n");
+    terminate(activeProcesses, shmPCBArrayPtr);
+}
+
+void abortSignalHandler(int sig) {
+    fprintf(stderr, "\nOSS caught abort signal.\nCleaning up...\n");
     terminate(activeProcesses, shmPCBArrayPtr);
 }

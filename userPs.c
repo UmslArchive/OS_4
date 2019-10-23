@@ -74,7 +74,7 @@ int main(int arg, char* argv[]) {
             (&shmPCBArrayKey, &shmPCBArraySize, &shmPCBArrayID);
 
     //-==-=-=-=-=-=-=-=-Loop-==--=-=-=-=-=-=-==-=-=-=-=--==
-
+    fprintf(stderr, "HI\n");
     //-=-=-==-=-=-=-Finalization/Termination--==--==-=--==-
 
     return 100;
@@ -84,14 +84,14 @@ sem_t* attachShmSemaphore(key_t* key, size_t* size, int* shmid) {
     //Retrieve shmid
     *shmid = shmget(*key, *size, SHM_ATTACH_FLAGS);
     if(*shmid < 0) {
-        perror("ERROR:oss:shmget failed(semaphore)");
+        perror("ERROR:usrPs:shmget failed(semaphore)");
         exit(1);
     }
 
     //Assign pointer
     void* temp = (void*)shmat(*shmid, NULL, 0);
     if(temp == (void*) -1) {
-        perror("ERROR:oss:shmat failed(semaphore)");
+        perror("ERROR:usrPs:shmat failed(semaphore)");
         exit(1);
     }
 
@@ -104,15 +104,15 @@ void* attachSharedMemory(key_t* key, size_t* size, int* shmid) {
     if(*shmid < 0) {
         switch(*key) {
             case SHM_KEY_CLOCK:
-            perror("ERROR:oss:shmid failed(clock)");
+            perror("ERROR:usrPs:shmid failed(clock)");
             break;
 
             case SHM_KEY_MSG:
-            perror("ERROR:oss:shmid failed(msg)");
+            perror("ERROR:usrPs:shmid failed(msg)");
             break;
 
             case SHM_KEY_PCB_ARRAY:
-            perror("ERROR:oss:shmid failed(pcbArray)");
+            perror("ERROR:usrPs:shmid failed(pcbArray)");
             break;
         }
         detachAll();
@@ -124,15 +124,15 @@ void* attachSharedMemory(key_t* key, size_t* size, int* shmid) {
     if(temp == (void*) -1) {
         switch(*key) {
             case SHM_KEY_CLOCK:
-            perror("ERROR:oss:shmat failed(clock)");
+            perror("ERROR:usrPs:shmat failed(clock)");
             break;
 
             case SHM_KEY_MSG:
-            perror("ERROR:oss:shmat failed(msg)");
+            perror("ERROR:usrPs:shmat failed(msg)");
             break;
 
             case SHM_KEY_PCB_ARRAY:
-            perror("ERROR:oss:shmat failed(pcbArray)");
+            perror("ERROR:usrPs:shmat failed(pcbArray)");
             break;
         }
         detachAll();

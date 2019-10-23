@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <time.h>
 
 //Keys
 #define SHM_KEY_SEM         0x66666666
