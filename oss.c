@@ -64,6 +64,10 @@ PCB* selectPCB(PCB* pcbArr, unsigned int sPID);
 void setBit(unsigned char arr[], int position, BitState setting);
 int readBit(unsigned char arr[], int position);
 int scanForEmptySlot(unsigned char activePsArr[]);
+int numProcesses(unsigned char activePsArr[]);
+void push(unsigned int queue[], size_t* size, unsigned int val);
+unsigned int pop(unsigned int queue[], size_t* size);
+void printQueue(unsigned int queue[], size_t size, int qNum);
 
 //========================================================
 //---------------------MAIN-------------------------------
@@ -115,9 +119,12 @@ int main(int arg, char* argv[]) {
     //Queues
     Clock* spawnTimes = NULL;
     size_t spawnTimesSize = 0;
-    unsigned int* queue1 = NULL;
-    unsigned int* queue2 = NULL;
-    unsigned int* queue3 = NULL;
+    unsigned int queue1[10];
+    unsigned int queue2[10];
+    unsigned int queue3[10];
+    size_t queue1Size = 0;
+    size_t queue2Size = 0;
+    size_t queue3Size = 0;
 
     //Initalize shared memory
     initClock(shmClockPtr);
@@ -133,8 +140,22 @@ int main(int arg, char* argv[]) {
     memset(activeProcesses, 0, sizeof(int) * 3);
 
     //-=-==-=-=-=--=Loop=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    push(queue1, &queue1Size, 25);
+    push(queue1, &queue1Size, 30);
+    printQueue(queue1, queue1Size, 1);
+    pop(queue1, &queue1Size);
+    printQueue(queue1, queue1Size, 1);
+    pop(queue1, &queue1Size);
+    printQueue(queue1, queue1Size, 1);
+    pop(queue1, &queue1Size);
+    printQueue(queue1, queue1Size, 1);
 
-    while(1) {
+    for(i = 0; i < 13; ++i) {
+        push(queue1, &queue1Size, i);
+        printQueue(queue1, queue1Size, 1);
+    }
+
+    while(0) {
         tickClock(shmClockPtr, 1, rand() % 100000000);
         fprintf(stderr, "CLOCK = %d:%.9d\n", shmClockPtr->seconds, shmClockPtr->nanoseconds);
 
@@ -221,6 +242,15 @@ int main(int arg, char* argv[]) {
                     if(pid == 0) {
                         execl("./usrPs", "usrPs", convertString,  (char*) NULL);
                     }
+
+                    //Schedule process
+                    if(numProcesses(activeProcesses) > 1) {
+
+                    }
+                    else {
+                        //TODO
+                    }
+
                     
                     //shrink spawn time array
                     spawnTimesSize--;
@@ -268,6 +298,73 @@ int main(int arg, char* argv[]) {
 
 //===================FUNCTION=DEFINITIONS============================
 
+void printQueue(unsigned int queue[], size_t size, int qNum) {
+    if(size <= 0) {
+        printf("cannot print empty queue\n");
+        return;
+    }
+    int i;
+    for(i = 0; i < size; ++i) {
+        printf("%d ", queue[i]);
+    }
+    printf("\n");
+}
+
+void push(unsigned int queue[], size_t* size, unsigned int val) {
+    int i;
+    unsigned int temp[10];
+    
+    //copy queue into temp
+    for(i = 0; i < *size; ++i) {
+        temp[i] = queue[i];
+    }
+
+    //add new element to front of queue
+    (*size)++;
+    if((*size) >= 10) {
+        printf("queue full\n");
+        (*size)--;
+        return;
+    }
+    queue[0] = val;
+    for(i = 1; i < *size; ++i) {
+        queue[i] = temp[i - 1];
+    }
+}
+
+unsigned int pop(unsigned int queue[], size_t* size) {
+    int i;
+    unsigned int temp[10];
+    unsigned int val = -1;
+    if(*size > 0){
+        val = queue[0];
+    }
+    else {
+        return val;
+    }
+
+    //copy queue into temp
+    for(i = 0; i < *size; ++i) {
+        temp[i] = queue[i];
+    }
+
+    (*size)--;
+    for(i = 0; i < *size; ++i) {
+        queue[i] = temp[i + 1];
+    }
+
+    return val;
+
+}
+
+unsigned int peek(unsigned int queue[], size_t size) {
+    if(size > 0)
+        return queue[0];
+    
+    printf("cannot peek empty queue\n");
+    return -1;
+}
+
 int scanForEmptySlot(unsigned char activePsArr[]) {
     int i;
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
@@ -277,6 +374,17 @@ int scanForEmptySlot(unsigned char activePsArr[]) {
     }
 
     return -1;
+}
+
+int numProcesses(unsigned char activePsArr[]) {
+    int i;
+    int num = 0;
+    for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
+        if(readBit(activePsArr, i) == ON) {
+            ++num;
+        }
+    }
+    return num;
 }
 
 sem_t* createShmSemaphore(key_t* key, size_t* size, int* shmid) {
