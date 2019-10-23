@@ -42,6 +42,7 @@ unsigned char activeProcesses[BIT_VEC_SIZE];
 
 void interruptSignalHandler(int sig);
 void abortSignalHandler(int sig);
+void alarmSignalHandler(int sig);
 
 //=================FUNCTION=PROTOTYPES===================
 
@@ -84,6 +85,9 @@ int main(int arg, char* argv[]) {
     //Register signal handlers
     signal(SIGINT, interruptSignalHandler);
     signal(SIGABRT, abortSignalHandler);
+    signal(SIGALRM, alarmSignalHandler);
+
+    alarm(3);
 
     //Utility variables
     int i, j, k, l;
@@ -299,7 +303,6 @@ int main(int arg, char* argv[]) {
             }
         }
         
-        //sleep(1);
         fprintf(stderr, "\n");
         free(randomSpawnTime);
         randomSpawnTime = NULL;
@@ -511,7 +514,7 @@ void terminate(unsigned char activePsArr[], PCB* pcbArr) {
     //Send Kill signals to every child process in the system for detachment
     for(i = 0; i < MAX_QUEUABLE_PROCESSES; ++i) {
         if(readBit(activePsArr, i) == ON) {
-            //kill(iter->actualPID, SIGQUIT);
+            //kill(iter->actualPID, SIGQUIT); //causes seg fault
         }
         ++iter;
     }
@@ -641,5 +644,10 @@ void interruptSignalHandler(int sig) {
 
 void abortSignalHandler(int sig) {
     fprintf(stderr, "\nOSS caught abort signal.\nCleaning up...\n");
+    terminate(activeProcesses, shmPCBArrayPtr);
+}
+
+void alarmSignalHandler(int sig) {
+    fprintf(stderr, "\nOSS caught alarm signal.\nCleaning up...\n");
     terminate(activeProcesses, shmPCBArrayPtr);
 }

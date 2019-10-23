@@ -85,7 +85,7 @@ int main(int arg, char* argv[]) {
 
         //Check for message.
         if(shmMsgPtr->simPID == pcbIterator->simPID && shmMsgPtr->state == DISPATCHED) {
-            fprintf(stderr, "Child: simPID=%d\n", pcbIterator->simPID);
+            fprintf(stderr, "Child: simPID=%d ran\n", pcbIterator->simPID);
             shmMsgPtr->state = RAN;
         }
         sem_post(shmSemPtr);
